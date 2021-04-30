@@ -1,0 +1,7 @@
+[workspace]
+
+members = [
+    "util",
+    "example",
+    "client"
+]

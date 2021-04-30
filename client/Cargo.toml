@@ -1,0 +1,12 @@
+[package]
+authors = ["Victor Saase <vsaase@gmail.com>"]
+edition = "2018"
+license = "MIT OR Apache-2.0"
+name = "client"
+version = "0.1.0"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+dicom = "0.4"
+reqwest = {version = "0.11.3", features = ["json"]}
