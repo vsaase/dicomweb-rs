@@ -21,8 +21,11 @@ impl DICOMWebClient {
 
     pub async fn query_studies(self, query: QueryParameters) -> Result<(), reqwest::Error> {
         let client = reqwest::Client::new();
-        let querytuples = query.values.iter().collect();
-        let res = client.get(self.url).query(querytuples).send().await?;
+        let mut req = client.get(self.url).query(&query.values);
+        if let Some(limit) = query.limit {
+            req = req.query(&[("limit", limit)]);
+        }
+        let res = req.send().await?;
         println!("Status: {}", res.status());
         println!("Headers:\n{:#?}", res.headers());
 
@@ -33,7 +36,7 @@ impl DICOMWebClient {
 }
 
 pub struct QueryParameters {
-    values: HashMap<Tag, String>,
+    values: HashMap<String, String>,
     includefield: Option<Vec<Tag>>,
     fuzzymatching: Option<bool>,
     limit: Option<i64>,
@@ -43,7 +46,7 @@ pub struct QueryParameters {
 impl QueryParameters {
     pub fn patient(name: &str) -> QueryParameters {
         let mut values = HashMap::new();
-        values.insert(Tag(0x0010, 0x0010), String::from(name));
+        values.insert(String::from("00100010"), String::from(name));
         QueryParameters {
             values,
             includefield: None,
