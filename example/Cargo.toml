@@ -14,3 +14,4 @@ reqwest = { version = "0.11.3", features = ["json"] }
 error-chain = "0.12.4"
 tokio = { version = "1.5.0", features = ["full"] }
 futures = "0.3.14"
+serde_json = "1"

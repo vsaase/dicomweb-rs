@@ -1,16 +1,18 @@
-use client::DICOMWebClient;
 use reqwest;
-// use error_chain::error_chain;
+use serde_json::Value;
 
-// error_chain! {
-//     foreign_links {
-//         Io(std::io::Error);
-//         HttpRequest(reqwest::Error);
-//     }
-// }
+use error_chain::error_chain;
+
+error_chain! {
+    foreign_links {
+        Io(std::io::Error);
+        HttpRequest(reqwest::Error);
+        Serde(serde_json::Error);
+    }
+}
 
 #[tokio::main]
-async fn main() -> reqwest::Result<()> {
+async fn main() -> Result<()> {
     // let url = "http://localhost:8088/rs";
     let url = "http://hackathon.siim.org/dicomweb/studies";
     // let client = DICOMWebClient::new(url);
@@ -28,5 +30,7 @@ async fn main() -> reqwest::Result<()> {
 
     let body = res.text().await?;
     println!("Body:\n{}", body);
+    let json: Value = serde_json::from_str(&body)?;
+    println!("JSON body:\n{}", json);
     Ok(())
 }

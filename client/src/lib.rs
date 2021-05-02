@@ -4,6 +4,7 @@ use std::collections::HashMap;
 
 #[derive(Default)]
 pub struct DICOMWebClient {
+    client: reqwest::Client,
     url: String,
     qido_url_prefix: String,
     wado_url_prefix: String,
@@ -14,25 +15,38 @@ pub struct DICOMWebClient {
 impl DICOMWebClient {
     pub fn new(url: &str) -> DICOMWebClient {
         DICOMWebClient {
+            client: reqwest::Client::new(),
             url: String::from(url),
             ..Default::default()
         }
     }
 
-    pub async fn query_studies(self, query: QueryParameters) -> Result<(), reqwest::Error> {
-        let client = reqwest::Client::new();
-        let mut req = client.get(self.url).query(&query.values);
-        if let Some(limit) = query.limit {
-            req = req.query(&[("limit", limit)]);
+    pub fn query_studies(&self) -> QueryBuilder {
+        QueryBuilder {
+            client: &self,
+            request_builder: self.client.get(&self.url),
         }
-        let res = req.send().await?;
-        println!("Status: {}", res.status());
-        println!("Headers:\n{:#?}", res.headers());
-
-        let body = res.text().await?;
-        println!("Body:\n{}", body);
-        Ok(())
     }
+
+    // pub async fn query_studies(self, query: QueryParameters) -> Result<(), reqwest::Error> {
+    //     let client = reqwest::Client::new();
+    //     let mut req = client.get(self.url).query(&query.values);
+    //     if let Some(limit) = query.limit {
+    //         req = req.query(&[("limit", limit)]);
+    //     }
+    //     let res = req.send().await?;
+    //     println!("Status: {}", res.status());
+    //     println!("Headers:\n{:#?}", res.headers());
+
+    //     let body = res.text().await?;
+    //     println!("Body:\n{}", body);
+    //     Ok(())
+    // }
+}
+
+pub struct QueryBuilder<'a> {
+    client: &'a DICOMWebClient,
+    request_builder: reqwest::RequestBuilder,
 }
 
 pub struct QueryParameters {
