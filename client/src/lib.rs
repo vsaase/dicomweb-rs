@@ -6,6 +6,7 @@ use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::future::Future;
 
+pub type Error = reqwest::Error;
 #[derive(Default)]
 pub struct DICOMWebClient {
     client: reqwest::Client,
@@ -26,9 +27,38 @@ impl DICOMWebClient {
     }
 
     pub fn find_studies(&self) -> QueryBuilder {
+        let mut url = self.url.clone();
+        url.push_str("/studies");
         QueryBuilder {
             client: &self,
-            request_builder: self.client.get(&self.url),
+            request_builder: self.client.get(&url),
+        }
+    }
+
+    pub fn find_series(&self, study_instance_uid: &str) -> QueryBuilder {
+        let mut url = self.url.clone();
+        url.push_str("/studies/");
+        url.push_str(study_instance_uid);
+        url.push_str("/series");
+        QueryBuilder {
+            client: &self,
+            request_builder: self.client.get(&url),
+        }
+    }
+
+    pub fn find_instances(
+        &self,
+        study_instance_uid: &str,
+        series_instance_uid: &str,
+    ) -> QueryBuilder {
+        let mut url = self.url.clone();
+        url.push_str("/studies/");
+        url.push_str(study_instance_uid);
+        url.push_str("/series/");
+        url.push_str(series_instance_uid);
+        QueryBuilder {
+            client: &self,
+            request_builder: self.client.get(&url),
         }
     }
 }
