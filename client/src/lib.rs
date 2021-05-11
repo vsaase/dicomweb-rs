@@ -1,13 +1,25 @@
 use dicom::core::Tag;
-use http;
+use http::{self, HeaderMap};
 use reqwest;
+use reqwest::header;
 use reqwest::header::{HeaderName, HeaderValue};
+use reqwest::Proxy;
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::env;
 use std::future::Future;
 
 pub type Error = reqwest::Error;
+
+#[derive(Default)]
+pub struct DICOMWebClientBuilder {
+    client_builder: reqwest::ClientBuilder,
+    url: String,
+    qido_url_prefix: String,
+    wado_url_prefix: String,
+    stow_url_prefix: String,
+    ups_url_prefix: String,
+}
 #[derive(Default)]
 pub struct DICOMWebClient {
     client: reqwest::Client,
@@ -18,16 +30,53 @@ pub struct DICOMWebClient {
     ups_url_prefix: String,
 }
 
-impl DICOMWebClient {
-    pub fn new(url: &str) -> DICOMWebClient {
-        DICOMWebClient {
-            client: reqwest::Client::builder()
-                .proxy(reqwest::Proxy::http(env::var("http_proxy").unwrap()).unwrap())
-                .build()
-                .unwrap(),
+impl DICOMWebClientBuilder {
+    pub fn new(url: &str) -> DICOMWebClientBuilder {
+        DICOMWebClientBuilder {
+            client_builder: reqwest::Client::builder(),
             url: String::from(url),
             ..Default::default()
         }
+    }
+
+    pub fn proxy(mut self, proxy: Proxy) -> DICOMWebClientBuilder {
+        self.client_builder = self.client_builder.proxy(proxy);
+        self
+    }
+
+    pub fn build(self) -> reqwest::Result<DICOMWebClient> {
+        let build = self.client_builder.build();
+        if let Ok(client) = build {
+            Ok(DICOMWebClient {
+                client: client,
+                url: self.url,
+                ..Default::default()
+            })
+        } else {
+            Err(build.err().unwrap())
+        }
+    }
+
+    pub fn default_headers(mut self, key: &'static str, value: &str) -> DICOMWebClientBuilder {
+        let mut headers = header::HeaderMap::new();
+        headers.insert(key, value.parse().unwrap());
+
+        self.client_builder = self.client_builder.default_headers(headers);
+        self
+    }
+}
+
+impl DICOMWebClient {
+    pub fn new(url: &str) -> DICOMWebClient {
+        let mut builder = DICOMWebClientBuilder::new(url);
+        if let Ok(proxy) = env::var("http_proxy") {
+            builder = builder.proxy(reqwest::Proxy::http(proxy).unwrap());
+        }
+        builder.build().unwrap()
+    }
+
+    pub fn builder(url: &str) -> DICOMWebClientBuilder {
+        DICOMWebClientBuilder::new(url)
     }
 
     pub fn find_studies(&self) -> QueryBuilder {

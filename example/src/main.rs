@@ -1,7 +1,8 @@
 use client::DICOMWebClient;
 use error_chain::error_chain;
-use log::{debug, error, info, log_enabled, warn, Level};
+use log::{debug, error, info, log_enabled, trace, warn, Level};
 use serde_json::Value;
+use util::parse_multipart_body;
 
 error_chain! {
     foreign_links {
@@ -24,11 +25,14 @@ async fn main() -> Result<()> {
 
     // let url = "http://localhost:8088/rs";
     let url = "http://hackathon.siim.org/dicomweb";
-    let client = DICOMWebClient::new(url);
+    // let client = DICOMWebClient::new(url);
+    let client = DICOMWebClient::builder(url)
+        .default_headers("apikey", "9c8a1e06-9b19-4e36-81ff-3ece53bdb674")
+        .build()
+        .unwrap();
     info!("querying studies");
     let res = client
         .find_studies()
-        .header("apikey", "9c8a1e06-9b19-4e36-81ff-3ece53bdb674")
         .patient_name("*")
         .limit(10)
         .send()
@@ -43,7 +47,6 @@ async fn main() -> Result<()> {
     info!("querying series");
     let res = client
         .find_series(study_instance_uid)
-        .header("apikey", "9c8a1e06-9b19-4e36-81ff-3ece53bdb674")
         .limit(10)
         .send()
         .await?;
@@ -55,7 +58,6 @@ async fn main() -> Result<()> {
     info!("querying instances");
     let res = client
         .find_instances(study_instance_uid, series_instance_uid)
-        .header("apikey", "9c8a1e06-9b19-4e36-81ff-3ece53bdb674")
         .limit(10)
         .send()
         .await?;
@@ -67,7 +69,6 @@ async fn main() -> Result<()> {
     let sop_instance_uid = json[0]["00080018"]["Value"][0].as_str().unwrap();
     let res = client
         .get_instance(study_instance_uid, series_instance_uid, sop_instance_uid)
-        .header("apikey", "9c8a1e06-9b19-4e36-81ff-3ece53bdb674")
         .send()
         .await?;
 
@@ -76,9 +77,11 @@ async fn main() -> Result<()> {
     let content_type = res.headers()["content-type"].to_str().unwrap();
     println!("content-type: {}", content_type);
     let (_, boundary) = content_type.rsplit_once("boundary=").unwrap();
+    let boundary = String::from(boundary);
     println!("boundary: {}", boundary);
 
     let body = res.bytes().await?;
-    // let mut iter = body.split()
+    parse_multipart_body(body, &boundary);
+
     Ok(())
 }
