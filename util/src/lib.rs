@@ -1,11 +1,14 @@
 use bytes::{Buf, Bytes};
+use dicom::object::DefaultDicomObject;
 use log::{debug, error, info, log_enabled, trace, warn, Level};
-use std::io::{self, Cursor, Read};
+use std::io::{self, Cursor, Error, ErrorKind, Read};
 use std::{borrow::Borrow, io::BufRead};
 
-pub fn parse_multipart_body(body: Bytes, boundary: &str) {
+pub fn parse_multipart_body(body: Bytes, boundary: &str) -> Result<Vec<Vec<u8>>, Error> {
     let mut reader = Cursor::new(body).reader();
     let mut line = String::new();
+
+    let mut result = vec![];
 
     let mut state = "finding begin";
     let mut content_length: usize = 0;
@@ -51,11 +54,28 @@ pub fn parse_multipart_body(body: Bytes, boundary: &str) {
         match state {
             "binary data starts" => {
                 let mut buffer = vec![0u8; content_length];
-                reader.read_exact(&mut buffer).unwrap();
-                state = "end of data"
+                reader.read_exact(&mut buffer)?;
+                result.push(buffer);
+                state = "finding begin"
             }
             _ => {}
         }
+    }
+    Ok(result)
+}
+
+pub fn dicom_from_reader<R: Read>(mut file: R) -> Result<DefaultDicomObject, Error> {
+    // skip preamble
+    {
+        let mut buf = [0u8; 128];
+        // skip the preamble
+        file.read_exact(&mut buf)?;
+    }
+    let result = DefaultDicomObject::from_reader(file);
+    if let Ok(ds) = result {
+        Ok(ds)
+    } else {
+        Err(Error::new(ErrorKind::Other, "error reading dicom"))
     }
 }
 

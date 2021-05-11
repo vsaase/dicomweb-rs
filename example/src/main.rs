@@ -1,14 +1,19 @@
+use std::io::Cursor;
+
+use bytes::Buf;
 use client::DICOMWebClient;
 use error_chain::error_chain;
 use log::{debug, error, info, log_enabled, trace, warn, Level};
 use serde_json::Value;
-use util::parse_multipart_body;
+use util::{dicom_from_reader, parse_multipart_body};
 
 error_chain! {
     foreign_links {
         Io(std::io::Error);
         HttpRequest(client::Error);
         Serde(serde_json::Error);
+        Dicom(dicom::object::Error);
+        DicomCastValue(dicom::core::value::CastValueError);
     }
 
     errors{
@@ -81,7 +86,9 @@ async fn main() -> Result<()> {
     println!("boundary: {}", boundary);
 
     let body = res.bytes().await?;
-    parse_multipart_body(body, &boundary);
-
+    let parts = parse_multipart_body(body, &boundary)?;
+    let reader = Cursor::new(parts[0].clone()).reader();
+    let ds = dicom_from_reader(reader)?;
+    println!("{:?}", ds.element_by_name("PatientName")?.to_str()?);
     Ok(())
 }
