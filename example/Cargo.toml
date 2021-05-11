@@ -10,6 +10,7 @@ edition = "2018"
 util = { path = "../util"}
 client = { path = "../client"}
 dicom = "0.4"
+reqwest = { version = "0.11.3", features = ["json", "multipart", "stream"] }
 error-chain = "0.12.4"
 tokio = { version = "1.5.0", features = ["full"] }
 futures = "0.3.14"

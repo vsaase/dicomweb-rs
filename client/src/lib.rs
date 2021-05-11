@@ -56,6 +56,26 @@ impl DICOMWebClient {
         url.push_str(study_instance_uid);
         url.push_str("/series/");
         url.push_str(series_instance_uid);
+        url.push_str("/instances");
+        QueryBuilder {
+            client: &self,
+            request_builder: self.client.get(&url),
+        }
+    }
+
+    pub fn get_instance(
+        &self,
+        study_instance_uid: &str,
+        series_instance_uid: &str,
+        sop_instance_uid: &str,
+    ) -> QueryBuilder {
+        let mut url = self.url.clone();
+        url.push_str("/studies/");
+        url.push_str(study_instance_uid);
+        url.push_str("/series/");
+        url.push_str(series_instance_uid);
+        url.push_str("/instances/");
+        url.push_str(sop_instance_uid);
         QueryBuilder {
             client: &self,
             request_builder: self.client.get(&url),
