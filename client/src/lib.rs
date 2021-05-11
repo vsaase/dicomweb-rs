@@ -4,6 +4,7 @@ use reqwest;
 use reqwest::header::{HeaderName, HeaderValue};
 use std::collections::HashMap;
 use std::convert::TryFrom;
+use std::env;
 use std::future::Future;
 
 pub type Error = reqwest::Error;
@@ -20,7 +21,10 @@ pub struct DICOMWebClient {
 impl DICOMWebClient {
     pub fn new(url: &str) -> DICOMWebClient {
         DICOMWebClient {
-            client: reqwest::Client::new(),
+            client: reqwest::Client::builder()
+                .proxy(reqwest::Proxy::http(env::var("http_proxy").unwrap()).unwrap())
+                .build()
+                .unwrap(),
             url: String::from(url),
             ..Default::default()
         }

@@ -79,6 +79,6 @@ async fn main() -> Result<()> {
     println!("boundary: {}", boundary);
 
     let body = res.bytes().await?;
-   let mut iter = body.split()
+    // let mut iter = body.split()
     Ok(())
 }
