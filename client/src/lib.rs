@@ -72,7 +72,10 @@ impl DICOMWebClientBuilder {
             Ok(DICOMWebClient {
                 client: client,
                 url: self.url,
-                ..Default::default()
+                qido_url_prefix: self.qido_url_prefix,
+                wado_url_prefix: self.wado_url_prefix,
+                stow_url_prefix: self.stow_url_prefix,
+                ups_url_prefix: self.ups_url_prefix,
             })
         } else {
             Err(build.err().unwrap())
@@ -103,6 +106,8 @@ impl DICOMWebClient {
 
     pub fn find_studies(&self) -> QueryBuilder {
         let mut url = self.url.clone();
+        url.push_str("/");
+        url.push_str(&self.qido_url_prefix);
         url.push_str("/studies");
         QueryBuilder {
             client: &self,
@@ -112,6 +117,8 @@ impl DICOMWebClient {
 
     pub fn find_series(&self, study_instance_uid: &str) -> QueryBuilder {
         let mut url = self.url.clone();
+        url.push_str("/");
+        url.push_str(&self.qido_url_prefix);
         url.push_str("/studies/");
         url.push_str(study_instance_uid);
         url.push_str("/series");
@@ -127,6 +134,8 @@ impl DICOMWebClient {
         series_instance_uid: &str,
     ) -> QueryBuilder {
         let mut url = self.url.clone();
+        url.push_str("/");
+        url.push_str(&self.qido_url_prefix);
         url.push_str("/studies/");
         url.push_str(study_instance_uid);
         url.push_str("/series/");
@@ -145,6 +154,8 @@ impl DICOMWebClient {
         sop_instance_uid: &str,
     ) -> QueryBuilder {
         let mut url = self.url.clone();
+        url.push_str("/");
+        url.push_str(&self.wado_url_prefix);
         url.push_str("/studies/");
         url.push_str(study_instance_uid);
         url.push_str("/series/");

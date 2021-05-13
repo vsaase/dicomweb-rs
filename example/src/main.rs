@@ -66,6 +66,8 @@ async fn main() -> Result<()> {
     println!("JSON body:\n{}", json);
 
     let sop_instance_uid = json[0]["00080018"]["Value"][0].as_str().unwrap();
+
+    info!("getting instance");
     let dicoms = client
         .get_instance(study_instance_uid, series_instance_uid, sop_instance_uid)
         .dicoms()
