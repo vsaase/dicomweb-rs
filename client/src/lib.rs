@@ -1,15 +1,37 @@
 use dicom::core::Tag;
+use dicom::object::DefaultDicomObject;
 use http::{self, HeaderMap};
 use reqwest;
 use reqwest::header;
 use reqwest::header::{HeaderName, HeaderValue};
 use reqwest::Proxy;
-use std::collections::HashMap;
+use serde::de::DeserializeOwned;
+use serde_json::Value;
+
+use bytes::Buf;
+use error_chain::error_chain;
 use std::convert::TryFrom;
 use std::env;
 use std::future::Future;
+use std::{collections::HashMap, io::Cursor};
+use util::{dicom_from_reader, parse_multipart_body};
 
-pub type Error = reqwest::Error;
+error_chain! {
+    foreign_links {
+        Io(std::io::Error);
+        HttpRequest(reqwest::Error);
+        Serde(serde_json::Error);
+        Dicom(dicom::object::Error);
+        DicomCastValue(dicom::core::value::CastValueError);
+    }
+
+    errors{
+        Custom(t: String) {
+            description("custom")
+            display("{}", t)
+        }
+    }
+}
 
 #[derive(Default)]
 pub struct DICOMWebClientBuilder {
@@ -163,10 +185,36 @@ impl<'a> QueryBuilder<'a> {
         self
     }
 
-    pub fn send(self) -> impl Future<Output = Result<reqwest::Response, reqwest::Error>> {
+    pub async fn json<T: DeserializeOwned>(self) -> reqwest::Result<T> {
+        let res = self.request_builder.send().await?;
+        res.json().await
+    }
+
+    pub async fn dicoms(self) -> Result<Vec<DefaultDicomObject>> {
+        let res = self.request_builder.send().await?;
+        let content_type = res.headers()["content-type"].to_str().unwrap();
+        println!("content-type: {}", content_type);
+        let (_, boundary) = content_type.rsplit_once("boundary=").unwrap();
+        let boundary = String::from(boundary);
+        println!("boundary: {}", boundary);
+
+        let body = res.bytes().await?;
+        let parts = parse_multipart_body(body, &boundary)?;
+        let result = parts
+            .iter()
+            .map(|part| {
+                let reader = Cursor::new(part).reader();
+                dicom_from_reader(reader).unwrap()
+            })
+            .collect();
+        Ok(result)
+    }
+
+    pub fn send(self) -> impl Future<Output = reqwest::Result<reqwest::Response>> {
         self.request_builder.send()
     }
 }
+
 #[cfg(test)]
 mod tests {
     #[test]
