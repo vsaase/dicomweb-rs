@@ -1,10 +1,38 @@
 use bytes::{Buf, Bytes};
-use dicom::object::DefaultDicomObject;
+use dicom::object::mem::InMemElement;
+use dicom::object::{
+    DefaultDicomObject, FileMetaTable, FileMetaTableBuilder, InMemDicomObject,
+    StandardDataDictionary,
+};
+use enum_as_inner::EnumAsInner;
+use error_chain::error_chain;
 use log::{debug, error, info, log_enabled, trace, warn, Level};
-use std::io::{self, Cursor, Error, ErrorKind, Read};
+use serde::Deserialize;
+use serde_json::Value;
 use std::{borrow::Borrow, io::BufRead};
+use std::{
+    collections::HashMap,
+    io::{self, Cursor, Read},
+};
 
-pub fn parse_multipart_body(body: Bytes, boundary: &str) -> Result<Vec<Vec<u8>>, Error> {
+error_chain! {
+    foreign_links {
+        Io(std::io::Error);
+        Serde(serde_json::Error);
+        Dicom(dicom::object::Error);
+        DicomMeta(dicom::object::meta::Error);
+        DicomCastValue(dicom::core::value::CastValueError);
+    }
+
+    errors{
+        Custom(t: String) {
+            description("custom")
+            display("{}", t)
+        }
+    }
+}
+
+pub fn parse_multipart_body(body: Bytes, boundary: &str) -> Result<Vec<Vec<u8>>> {
     let mut reader = Cursor::new(body).reader();
     let mut line = String::new();
 
@@ -64,7 +92,7 @@ pub fn parse_multipart_body(body: Bytes, boundary: &str) -> Result<Vec<Vec<u8>>,
     Ok(result)
 }
 
-pub fn dicom_from_reader<R: Read>(mut file: R) -> Result<DefaultDicomObject, Error> {
+pub fn dicom_from_reader<R: Read>(mut file: R) -> Result<DefaultDicomObject> {
     // skip preamble
     {
         let mut buf = [0u8; 128];
@@ -75,8 +103,33 @@ pub fn dicom_from_reader<R: Read>(mut file: R) -> Result<DefaultDicomObject, Err
     if let Ok(ds) = result {
         Ok(ds)
     } else {
-        Err(Error::new(ErrorKind::Other, "error reading dicom"))
+        Err(ErrorKind::Custom(String::from("error reading dicom")).into())
     }
+}
+
+#[derive(Debug, Deserialize, EnumAsInner)]
+#[serde(untagged)]
+pub enum DICOMJsonTagValue {
+    Str(String),
+    Int(i32),
+    DICOMJson(DICOMJson),
+    Value(Value),
+}
+
+#[derive(Debug, Deserialize)]
+pub struct DICOMJsonTag {
+    pub vr: String,
+    pub Value: Vec<DICOMJsonTagValue>,
+}
+
+pub type DICOMJson = Vec<HashMap<String, DICOMJsonTag>>;
+
+pub fn json2dicom(injson: &str) -> Result<InMemDicomObject<StandardDataDictionary>> {
+    let parsed: DICOMJson = serde_json::from_str(injson)?;
+    println!("{:?}", parsed);
+
+    let ds = InMemDicomObject::create_empty();
+    Ok(ds)
 }
 
 #[cfg(test)]

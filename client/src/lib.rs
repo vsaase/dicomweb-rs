@@ -14,7 +14,7 @@ use std::convert::TryFrom;
 use std::env;
 use std::future::Future;
 use std::{collections::HashMap, io::Cursor};
-use util::{dicom_from_reader, parse_multipart_body};
+use util::{dicom_from_reader, json2dicom, parse_multipart_body};
 
 error_chain! {
     foreign_links {
@@ -23,6 +23,7 @@ error_chain! {
         Serde(serde_json::Error);
         Dicom(dicom::object::Error);
         DicomCastValue(dicom::core::value::CastValueError);
+        Util(util::Error);
     }
 
     errors{
@@ -193,6 +194,13 @@ impl<'a> QueryBuilder<'a> {
 
     pub fn limit(mut self, limit: u32) -> QueryBuilder<'a> {
         self.request_builder = self.request_builder.query(&[("limit", limit.to_string())]);
+        self
+    }
+
+    pub fn offset(mut self, offset: u32) -> QueryBuilder<'a> {
+        self.request_builder = self
+            .request_builder
+            .query(&[("offset", offset.to_string())]);
         self
     }
 

@@ -5,7 +5,7 @@ use client::DICOMWebClient;
 use error_chain::error_chain;
 use log::{debug, error, info, log_enabled, trace, warn, Level};
 use serde_json::Value;
-use util::{dicom_from_reader, parse_multipart_body};
+use util::{dicom_from_reader, parse_multipart_body, DICOMJson, DICOMJsonTagValue};
 
 error_chain! {
     foreign_links {
@@ -37,35 +37,39 @@ async fn main() -> Result<()> {
         .build()
         .unwrap();
     info!("querying studies");
-    let json: Value = client
+    let json: DICOMJson = client
         .find_studies()
         .patient_name("*")
         .limit(10)
         .json()
         .await?;
-    println!("JSON body:\n{}", json);
+    println!("JSON body:\n{:?}", json);
 
-    let study_instance_uid = json[0]["0020000D"]["Value"][0].as_str().unwrap();
+    // if let DICOMJsonTagValue::String(study_instance_uid) = &json[0]["0020000D"].Value[0] {
+    //     println!("{}", study_instance_uid);
+    // }
+    let study_instance_uid = json[0]["0020000D"].Value[0].as_str().unwrap();
+    println!("{}", study_instance_uid);
 
     info!("querying series");
-    let json: Value = client
+    let json: DICOMJson = client
         .find_series(study_instance_uid)
         .limit(10)
         .json()
         .await?;
-    println!("JSON body:\n{}", json);
+    println!("JSON body:\n{:?}", json);
 
-    let series_instance_uid = json[0]["0020000E"]["Value"][0].as_str().unwrap();
+    let series_instance_uid = json[0]["0020000E"].Value[0].as_str().unwrap();
 
     info!("querying instances");
-    let json: Value = client
+    let json: DICOMJson = client
         .find_instances(study_instance_uid, series_instance_uid)
         .limit(10)
         .json()
         .await?;
-    println!("JSON body:\n{}", json);
+    println!("JSON body:\n{:?}", json);
 
-    let sop_instance_uid = json[0]["00080018"]["Value"][0].as_str().unwrap();
+    let sop_instance_uid = json[0]["00080018"].Value[0].as_str().unwrap();
 
     info!("getting instance");
     let dicoms = client
