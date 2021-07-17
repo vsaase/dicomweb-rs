@@ -4,7 +4,10 @@ use http::{self, HeaderMap};
 use reqwest;
 use reqwest::header;
 use reqwest::header::{HeaderName, HeaderValue};
+
+#[cfg(not(target_arch = "wasm32"))]
 use reqwest::Proxy;
+
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 
@@ -62,6 +65,7 @@ impl DICOMWebClientBuilder {
         }
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn proxy(mut self, proxy: Proxy) -> DICOMWebClientBuilder {
         self.client_builder = self.client_builder.proxy(proxy);
         self
@@ -95,9 +99,12 @@ impl DICOMWebClientBuilder {
 impl DICOMWebClient {
     pub fn new(url: &str) -> DICOMWebClient {
         let mut builder = DICOMWebClientBuilder::new(url);
+
+        #[cfg(not(target_arch = "wasm32"))]
         if let Ok(proxy) = env::var("http_proxy") {
             builder = builder.proxy(reqwest::Proxy::http(proxy).unwrap());
         }
+
         builder.build().unwrap()
     }
 
