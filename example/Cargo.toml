@@ -7,8 +7,8 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-util = { path = "../util"}
-client = { path = "../client"}
+util = { path = "../util" }
+dicomweb-client = { path = "../client" }
 dicom = "0.4"
 reqwest = { version = "0.11.3", features = ["json", "multipart", "stream"] }
 error-chain = "0.12.4"

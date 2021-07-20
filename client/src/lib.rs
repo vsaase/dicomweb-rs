@@ -19,6 +19,8 @@ use std::future::Future;
 use std::{collections::HashMap, io::Cursor};
 use util::{dicom_from_reader, json2dicom, parse_multipart_body};
 
+pub use util::DICOMJson;
+
 error_chain! {
     foreign_links {
         Io(std::io::Error);

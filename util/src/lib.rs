@@ -46,8 +46,8 @@ pub fn parse_multipart_body(body: Bytes, boundary: &str) -> Result<Vec<Vec<u8>>>
                 if bytes_read == 0 {
                     break;
                 }
-
-                println!("{}", line);
+                trace!("{}", state);
+                trace!("{}", line);
                 match state {
                     "finding begin" => {
                         if line.trim().ends_with(boundary) {
@@ -62,6 +62,8 @@ pub fn parse_multipart_body(body: Bytes, boundary: &str) -> Result<Vec<Vec<u8>>>
                                     .unwrap();
                             debug!("content length:{}", content_length);
                             state = "in header, wait for end";
+                        } else if line.trim() == "" {
+                            state = "binary data starts";
                         }
                     }
                     "in header, wait for end" => {
@@ -81,9 +83,17 @@ pub fn parse_multipart_body(body: Bytes, boundary: &str) -> Result<Vec<Vec<u8>>>
         };
         match state {
             "binary data starts" => {
-                let mut buffer = vec![0u8; content_length];
-                reader.read_exact(&mut buffer)?;
-                result.push(buffer);
+                if content_length > 0 {
+                    let mut buffer = vec![0u8; content_length];
+                    reader.read_exact(&mut buffer)?;
+                    result.push(buffer);
+                } else {
+                    // length not specified, assuming single part and trailing boundary like CRLF--boundary--
+                    let mut buffer = Vec::new();
+                    reader.read_to_end(&mut buffer)?;
+                    let len = buffer.len() - boundary.len() - 6;
+                    result.push(buffer[..len].into());
+                }
                 state = "finding begin"
             }
             _ => {}

@@ -1,7 +1,7 @@
 use std::io::Cursor;
 
 use bytes::Buf;
-use client::DICOMWebClient;
+use dicomweb_client::DICOMWebClient;
 use error_chain::error_chain;
 use log::{debug, error, info, log_enabled, trace, warn, Level};
 use serde_json::Value;
