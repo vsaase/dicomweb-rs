@@ -1,11 +1,11 @@
 use std::io::Cursor;
 
 use bytes::Buf;
-use client::DICOMWebClient;
+use dicomweb_client::DICOMWebClient;
 use error_chain::error_chain;
 use log::{debug, error, info, log_enabled, trace, warn, Level};
 use serde_json::Value;
-use util::{dicom_from_reader, parse_multipart_body, DICOMJson, DICOMJsonTagValue};
+use dicomweb_util::{dicom_from_reader, parse_multipart_body, DICOMJson, DICOMJsonTagValue};
 
 error_chain! {
     foreign_links {

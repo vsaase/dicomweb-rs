@@ -9,12 +9,12 @@ use serde::de::DeserializeOwned;
 use serde_json::Value;
 
 use bytes::Buf;
+use dicomweb_util::{dicom_from_reader, json2dicom, parse_multipart_body};
 use error_chain::error_chain;
 use std::convert::TryFrom;
 use std::env;
 use std::future::Future;
 use std::{collections::HashMap, io::Cursor};
-use util::{dicom_from_reader, json2dicom, parse_multipart_body};
 
 error_chain! {
     foreign_links {
@@ -23,7 +23,7 @@ error_chain! {
         Serde(serde_json::Error);
         Dicom(dicom::object::Error);
         DicomCastValue(dicom::core::value::CastValueError);
-        Util(util::Error);
+        Util(dicomweb_util::Error);
     }
 
     errors{
