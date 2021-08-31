@@ -4,7 +4,10 @@ use http::{self, HeaderMap};
 use reqwest;
 use reqwest::header;
 use reqwest::header::{HeaderName, HeaderValue};
+
+#[cfg(not(target_arch = "wasm32"))]
 use reqwest::Proxy;
+
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 
@@ -15,6 +18,8 @@ use std::convert::TryFrom;
 use std::env;
 use std::future::Future;
 use std::{collections::HashMap, io::Cursor};
+
+pub use util::DICOMJson;
 
 error_chain! {
     foreign_links {
@@ -62,6 +67,7 @@ impl DICOMWebClientBuilder {
         }
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn proxy(mut self, proxy: Proxy) -> DICOMWebClientBuilder {
         self.client_builder = self.client_builder.proxy(proxy);
         self
@@ -95,9 +101,12 @@ impl DICOMWebClientBuilder {
 impl DICOMWebClient {
     pub fn new(url: &str) -> DICOMWebClient {
         let mut builder = DICOMWebClientBuilder::new(url);
+
+        #[cfg(not(target_arch = "wasm32"))]
         if let Ok(proxy) = env::var("http_proxy") {
             builder = builder.proxy(reqwest::Proxy::http(proxy).unwrap());
         }
+
         builder.build().unwrap()
     }
 
@@ -107,7 +116,6 @@ impl DICOMWebClient {
 
     pub fn find_studies(&self) -> QueryBuilder {
         let mut url = self.url.clone();
-        url.push_str("/");
         url.push_str(&self.qido_url_prefix);
         url.push_str("/studies");
         QueryBuilder {
@@ -118,7 +126,6 @@ impl DICOMWebClient {
 
     pub fn find_series(&self, study_instance_uid: &str) -> QueryBuilder {
         let mut url = self.url.clone();
-        url.push_str("/");
         url.push_str(&self.qido_url_prefix);
         url.push_str("/studies/");
         url.push_str(study_instance_uid);
@@ -135,7 +142,6 @@ impl DICOMWebClient {
         series_instance_uid: &str,
     ) -> QueryBuilder {
         let mut url = self.url.clone();
-        url.push_str("/");
         url.push_str(&self.qido_url_prefix);
         url.push_str("/studies/");
         url.push_str(study_instance_uid);
@@ -155,7 +161,6 @@ impl DICOMWebClient {
         sop_instance_uid: &str,
     ) -> QueryBuilder {
         let mut url = self.url.clone();
-        url.push_str("/");
         url.push_str(&self.wado_url_prefix);
         url.push_str("/studies/");
         url.push_str(study_instance_uid);

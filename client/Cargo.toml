@@ -9,6 +9,7 @@ version = "0.1.0"
 
 [dependencies]
 dicomweb-util = { path = "../util" }
+log = "0.4"
 error-chain = "0.12.4"
 bytes = "1"
 dicom = "0.4"
