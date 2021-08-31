@@ -19,7 +19,7 @@ use std::env;
 use std::future::Future;
 use std::{collections::HashMap, io::Cursor};
 
-pub use util::DICOMJson;
+pub use dicomweb_util::DICOMJson;
 
 error_chain! {
     foreign_links {
