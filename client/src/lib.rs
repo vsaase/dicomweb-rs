@@ -41,7 +41,7 @@ error_chain! {
 
 #[derive(Default)]
 pub struct DICOMWebClientBuilder {
-    client_builder: reqwest::ClientBuilder,
+    client_builder: reqwest::blocking::ClientBuilder,
     url: String,
     qido_url_prefix: String,
     wado_url_prefix: String,
@@ -50,7 +50,7 @@ pub struct DICOMWebClientBuilder {
 }
 #[derive(Default)]
 pub struct DICOMWebClient {
-    client: reqwest::Client,
+    client: reqwest::blocking::Client,
     url: String,
     qido_url_prefix: String,
     wado_url_prefix: String,
@@ -61,7 +61,7 @@ pub struct DICOMWebClient {
 impl DICOMWebClientBuilder {
     pub fn new(url: &str) -> DICOMWebClientBuilder {
         DICOMWebClientBuilder {
-            client_builder: reqwest::Client::builder(),
+            client_builder: reqwest::blocking::Client::builder(),
             url: String::from(url),
             ..Default::default()
         }
@@ -177,7 +177,7 @@ impl DICOMWebClient {
 
 pub struct QueryBuilder<'a> {
     client: &'a DICOMWebClient,
-    request_builder: reqwest::RequestBuilder,
+    request_builder: reqwest::blocking::RequestBuilder,
 }
 
 impl<'a> QueryBuilder<'a> {
@@ -209,20 +209,20 @@ impl<'a> QueryBuilder<'a> {
         self
     }
 
-    pub async fn json<T: DeserializeOwned>(self) -> reqwest::Result<T> {
-        let res = self.request_builder.send().await?;
-        res.json().await
+    pub fn json<T: DeserializeOwned>(self) -> reqwest::Result<T> {
+        let res = self.request_builder.send()?;
+        res.json()
     }
 
-    pub async fn dicoms(self) -> Result<Vec<DefaultDicomObject>> {
-        let res = self.request_builder.send().await?;
+    pub fn dicoms(self) -> Result<Vec<DefaultDicomObject>> {
+        let res = self.request_builder.send()?;
         let content_type = res.headers()["content-type"].to_str().unwrap();
         println!("content-type: {}", content_type);
         let (_, boundary) = content_type.rsplit_once("boundary=").unwrap();
         let boundary = String::from(boundary);
         println!("boundary: {}", boundary);
 
-        let body = res.bytes().await?;
+        let body = res.bytes()?;
         let parts = parse_multipart_body(body, &boundary)?;
         let result = parts
             .iter()
@@ -234,7 +234,7 @@ impl<'a> QueryBuilder<'a> {
         Ok(result)
     }
 
-    pub fn send(self) -> impl Future<Output = reqwest::Result<reqwest::Response>> {
+    pub fn send(self) -> reqwest::Result<reqwest::blocking::Response> {
         self.request_builder.send()
     }
 }

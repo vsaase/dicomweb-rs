@@ -2,10 +2,10 @@ use std::io::Cursor;
 
 use bytes::Buf;
 use dicomweb_client::DICOMWebClient;
+use dicomweb_util::{dicom_from_reader, parse_multipart_body, DICOMJson, DICOMJsonTagValue};
 use error_chain::error_chain;
 use log::{debug, error, info, log_enabled, trace, warn, Level};
 use serde_json::Value;
-use dicomweb_util::{dicom_from_reader, parse_multipart_body, DICOMJson, DICOMJsonTagValue};
 
 error_chain! {
     foreign_links {
@@ -24,8 +24,7 @@ error_chain! {
     }
 }
 
-#[tokio::main]
-async fn main() -> Result<()> {
+fn main() -> Result<()> {
     env_logger::init();
 
     // let url = "http://localhost:8088/rs";
@@ -39,12 +38,7 @@ async fn main() -> Result<()> {
         .build()
         .unwrap();
     info!("querying studies");
-    let json: DICOMJson = client
-        .find_studies()
-        .patient_name("*")
-        .limit(10)
-        .json()
-        .await?;
+    let json: DICOMJson = client.find_studies().patient_name("*").limit(10).json()?;
     println!("JSON body:\n{:?}", json);
 
     // if let DICOMJsonTagValue::String(study_instance_uid) = &json[0]["0020000D"].Value[0] {
@@ -54,11 +48,7 @@ async fn main() -> Result<()> {
     println!("{}", study_instance_uid);
 
     info!("querying series");
-    let json: DICOMJson = client
-        .find_series(study_instance_uid)
-        .limit(10)
-        .json()
-        .await?;
+    let json: DICOMJson = client.find_series(study_instance_uid).limit(10).json()?;
     println!("JSON body:\n{:?}", json);
 
     let series_instance_uid = json[0]["0020000E"].Value[0].as_str().unwrap();
@@ -67,8 +57,7 @@ async fn main() -> Result<()> {
     let json: DICOMJson = client
         .find_instances(study_instance_uid, series_instance_uid)
         .limit(10)
-        .json()
-        .await?;
+        .json()?;
     println!("JSON body:\n{:?}", json);
 
     let sop_instance_uid = json[0]["00080018"].Value[0].as_str().unwrap();
@@ -77,7 +66,6 @@ async fn main() -> Result<()> {
     let dicoms = client
         .get_instance(study_instance_uid, series_instance_uid, sop_instance_uid)
         .dicoms()
-        .await
         .unwrap();
     println!("{:?}", dicoms[0].element_by_name("PatientName")?.to_str()?);
     Ok(())
