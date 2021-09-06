@@ -39,13 +39,14 @@ async fn main() -> Result<()> {
         .build()
         .unwrap();
     info!("querying studies");
-    // let json: DICOMJson =
-    let c = client.find_studies().patient_name("*").limit(10);
-    println!("{:?} url: {}", c, c.url.as_ref().unwrap().as_str());
-    //     .json()
-    //     .await
-    //     .unwrap();
-    // println!("JSON body:\n{:?}", json);
+    let json: DICOMJson = client
+        .find_studies()
+        .patient_name("*")
+        .limit(10)
+        .json()
+        .await
+        .unwrap();
+    println!("JSON body:\n{:?}", json);
 
     // // if let DICOMJsonTagValue::String(study_instance_uid) = &json[0]["0020000D"].Value[0] {
     // //     println!("{}", study_instance_uid);

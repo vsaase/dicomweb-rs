@@ -52,10 +52,10 @@ impl DICOMWebClientSurf {
     }
 
     pub fn find_studies(mut self) -> Self {
-        let mut path: String = "".to_owned();
-        path.push_str(&self.qido_url_prefix);
-        path.push_str("/studies");
         if let Some(ref mut url) = self.url {
+            let mut path: String = url.path().to_owned();
+            path.push_str(&self.qido_url_prefix);
+            path.push_str("/studies");
             url.set_path(&path.as_str());
         };
         self
@@ -80,6 +80,13 @@ impl DICOMWebClientSurf {
         self.client
             .get(self.url.unwrap().as_str())
             .recv_json()
+            .await
+    }
+
+    pub async fn string(self) -> surf::Result<String> {
+        self.client
+            .get(self.url.unwrap().as_str())
+            .recv_string()
             .await
     }
 }
