@@ -1,7 +1,7 @@
 use std::io::Cursor;
 
 use bytes::Buf;
-use dicomweb_client::DICOMWebClient;
+use dicomweb_client::{blocking::DICOMWebClientBlocking, DICOMWebClient};
 use dicomweb_util::{dicom_from_reader, parse_multipart_body, DICOMJson, DICOMJsonTagValue};
 use error_chain::error_chain;
 use log::{debug, error, info, log_enabled, trace, warn, Level};
@@ -33,7 +33,7 @@ fn main() -> Result<()> {
     // let url = "http://localhost:8080/dcm4chee-arc/aets/DCM4CHEE/rs";
     // let client = DICOMWebClient::new(url);
     info!("creating client");
-    let client = DICOMWebClient::builder(url)
+    let client = DICOMWebClientBlocking::builder(url)
         .default_headers("apikey", "9c8a1e06-9b19-4e36-81ff-3ece53bdb674")
         .build()
         .unwrap();
