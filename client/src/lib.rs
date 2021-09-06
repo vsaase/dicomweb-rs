@@ -1,6 +1,3 @@
-use dicom::core::dictionary::DictionaryEntry;
-use dicom::core::Tag;
-use dicom::object::DefaultDicomObject;
 use http::{self, HeaderMap};
 use reqwest;
 use reqwest::header;
@@ -9,22 +6,17 @@ use reqwest::header::{HeaderName, HeaderValue};
 #[cfg(not(target_arch = "wasm32"))]
 use reqwest::Proxy;
 
-use serde::de::DeserializeOwned;
 use serde::Serialize;
-use serde_json::Value;
 
-use bytes::Buf;
-use dicomweb_util::{dicom_from_reader, json2dicom, parse_multipart_body};
 use error_chain::error_chain;
 use std::convert::TryFrom;
 use std::env;
-use std::future::Future;
-use std::{collections::HashMap, io::Cursor};
 
 pub use dicomweb_util::DICOMJson;
 
-pub mod async_client;
-pub mod blocking;
+pub mod async_reqwest;
+pub mod async_surf;
+pub mod blocking_reqwest;
 
 error_chain! {
     foreign_links {
@@ -44,15 +36,15 @@ error_chain! {
     }
 }
 
-pub trait ClientBuilderTrait {
-    type WebClient: ClientTrait;
+pub trait ReqwestClientBuilder {
+    type Client: ReqwestClient;
     fn proxy(self, proxy: Proxy) -> Self;
     fn default_headers(self, headers: HeaderMap) -> Self;
-    fn build(self) -> reqwest::Result<Self::WebClient>;
+    fn build(self) -> reqwest::Result<Self::Client>;
 }
 
 #[derive(Default)]
-pub struct DICOMWebClientBuilder<T: ClientBuilderTrait> {
+pub struct DICOMWebClientBuilder<T> {
     client_builder: T,
     url: String,
     qido_url_prefix: String,
@@ -61,7 +53,7 @@ pub struct DICOMWebClientBuilder<T: ClientBuilderTrait> {
     ups_url_prefix: String,
 }
 
-impl<T: ClientBuilderTrait + Default> DICOMWebClientBuilder<T> {
+impl<T: ReqwestClientBuilder + Default> DICOMWebClientBuilder<T> {
     fn new(url: &str) -> Self
     where
         Self: Sized,
@@ -86,7 +78,7 @@ impl<T: ClientBuilderTrait + Default> DICOMWebClientBuilder<T> {
         self
     }
 
-    pub fn build(self) -> reqwest::Result<DICOMWebClient<T::WebClient>> {
+    pub fn build(self) -> reqwest::Result<DICOMWebClient<T::Client>> {
         let build = self.client_builder.build();
         if let Ok(client) = build {
             Ok(DICOMWebClient {
@@ -103,15 +95,15 @@ impl<T: ClientBuilderTrait + Default> DICOMWebClientBuilder<T> {
     }
 }
 
-pub trait ClientTrait {
-    type ClientBuilder: ClientBuilderTrait + Default;
+pub trait ReqwestClient {
+    type ClientBuilder: ReqwestClientBuilder + Default;
     type RequestBuilder;
 
     fn get<U: reqwest::IntoUrl>(&self, url: U) -> Self::RequestBuilder;
 }
 
 #[derive(Default)]
-pub struct DICOMWebClient<T: ClientTrait> {
+pub struct DICOMWebClient<T> {
     client: T,
     url: String,
     qido_url_prefix: String,
@@ -120,10 +112,10 @@ pub struct DICOMWebClient<T: ClientTrait> {
     ups_url_prefix: String,
 }
 
-impl<T: ClientTrait> DICOMWebClient<T> {
+impl<T: ReqwestClient> DICOMWebClient<T> {
     pub fn new(
         url: &str,
-    ) -> DICOMWebClient<<<T as ClientTrait>::ClientBuilder as ClientBuilderTrait>::WebClient> {
+    ) -> DICOMWebClient<<<T as ReqwestClient>::ClientBuilder as ReqwestClientBuilder>::Client> {
         let mut builder = DICOMWebClientBuilder::<T::ClientBuilder>::new(url);
 
         #[cfg(not(target_arch = "wasm32"))]

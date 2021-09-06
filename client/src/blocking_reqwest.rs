@@ -1,27 +1,26 @@
 use std::convert::TryFrom;
-use std::env;
 use std::io::Cursor;
 
 use bytes::Buf;
 use dicom::object::DefaultDicomObject;
 use dicomweb_util::{dicom_from_reader, parse_multipart_body};
-use http::header::{self, HeaderName};
+use http::header::HeaderName;
 use http::{HeaderMap, HeaderValue};
 use reqwest::Proxy;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
-use crate::{ClientBuilderTrait, ClientTrait, Result};
 use crate::{DICOMWebClient, DICOMWebClientBuilder};
-use crate::{QueryBuilder, RequestBuilderTrait};
+use crate::{QueryBuilder, ReqwestClient, ReqwestClientBuilder};
+use crate::{RequestBuilderTrait, Result};
 
-pub type DICOMWebClientBuilderAsync = DICOMWebClientBuilder<reqwest::ClientBuilder>;
-pub type DICOMWebClientAsync = DICOMWebClient<reqwest::Client>;
+pub type DICOMWebClientBuilderBlocking = DICOMWebClientBuilder<reqwest::blocking::ClientBuilder>;
+pub type DICOMWebClientBlocking = DICOMWebClient<reqwest::blocking::Client>;
 
-pub type QueryBuilderAsync = QueryBuilder<reqwest::RequestBuilder>;
+pub type QueryBuilderBlocking = QueryBuilder<reqwest::blocking::RequestBuilder>;
 
-impl ClientBuilderTrait for reqwest::ClientBuilder {
-    type WebClient = reqwest::Client;
+impl ReqwestClientBuilder for reqwest::blocking::ClientBuilder {
+    type Client = reqwest::blocking::Client;
     fn proxy(self, proxy: Proxy) -> Self {
         self.proxy(proxy)
     }
@@ -29,20 +28,21 @@ impl ClientBuilderTrait for reqwest::ClientBuilder {
     fn default_headers(self, headers: HeaderMap) -> Self {
         self.default_headers(headers)
     }
-    fn build(self) -> reqwest::Result<Self::WebClient> {
+    fn build(self) -> reqwest::Result<Self::Client> {
         self.build()
     }
 }
 
-impl ClientTrait for reqwest::Client {
-    type ClientBuilder = reqwest::ClientBuilder;
-    type RequestBuilder = reqwest::RequestBuilder;
+impl ReqwestClient for reqwest::blocking::Client {
+    type ClientBuilder = reqwest::blocking::ClientBuilder;
+    type RequestBuilder = reqwest::blocking::RequestBuilder;
 
     fn get<U: reqwest::IntoUrl>(&self, url: U) -> Self::RequestBuilder {
         self.get(url)
     }
 }
-impl RequestBuilderTrait for reqwest::RequestBuilder {
+
+impl RequestBuilderTrait for reqwest::blocking::RequestBuilder {
     fn header<K, V>(self, key: K, value: V) -> Self
     where
         HeaderName: TryFrom<K>,
@@ -58,21 +58,21 @@ impl RequestBuilderTrait for reqwest::RequestBuilder {
     }
 }
 
-impl QueryBuilderAsync {
-    pub async fn json<T: DeserializeOwned>(self) -> reqwest::Result<T> {
-        let res = self.send().await?;
-        res.json().await
+impl QueryBuilderBlocking {
+    pub fn json<T: DeserializeOwned>(self) -> reqwest::Result<T> {
+        let res = self.send()?;
+        res.json()
     }
 
-    pub async fn dicoms(self) -> Result<Vec<DefaultDicomObject>> {
-        let res = self.send().await?;
+    pub fn dicoms(self) -> Result<Vec<DefaultDicomObject>> {
+        let res = self.send()?;
         let content_type = res.headers()["content-type"].to_str().unwrap();
         println!("content-type: {}", content_type);
         let (_, boundary) = content_type.rsplit_once("boundary=").unwrap();
         let boundary = String::from(boundary);
         println!("boundary: {}", boundary);
 
-        let body = res.bytes().await?;
+        let body = res.bytes()?;
         let parts = parse_multipart_body(body, &boundary)?;
         let result = parts
             .iter()
@@ -84,7 +84,7 @@ impl QueryBuilderAsync {
         Ok(result)
     }
 
-    pub async fn send(self) -> reqwest::Result<reqwest::Response> {
-        self.request_builder.send().await
+    pub fn send(self) -> reqwest::Result<reqwest::blocking::Response> {
+        self.request_builder.send()
     }
 }

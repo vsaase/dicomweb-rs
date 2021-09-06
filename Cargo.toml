@@ -2,6 +2,8 @@
 
 members = [
     "util",
-    "example",
-    "client"
+    "examples/blocking",
+    "examples/async_reqwest",
+    "examples/async_surf",
+    "client",
 ]
