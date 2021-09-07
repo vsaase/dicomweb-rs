@@ -2,27 +2,11 @@ use std::io::Cursor;
 
 use bytes::Buf;
 use dicomweb_client::async_reqwest::DICOMWebClientAsync;
+use dicomweb_client::Result;
 use dicomweb_util::{dicom_from_reader, parse_multipart_body, DICOMJson, DICOMJsonTagValue};
 use error_chain::error_chain;
 use log::{debug, error, info, log_enabled, trace, warn, Level};
 use serde_json::Value;
-
-error_chain! {
-    foreign_links {
-        Io(std::io::Error);
-        HttpRequest(reqwest::Error);
-        Serde(serde_json::Error);
-        Dicom(dicom::object::Error);
-        DicomCastValue(dicom::core::value::CastValueError);
-    }
-
-    errors{
-        Custom(t: String) {
-            description("custom")
-            display("{}", t)
-        }
-    }
-}
 
 #[tokio::main]
 async fn main() -> Result<()> {

@@ -2,27 +2,11 @@ use std::io::Cursor;
 
 use bytes::Buf;
 use dicomweb_client::async_surf::DICOMWebClientSurf;
+use dicomweb_client::Result;
 use dicomweb_util::{dicom_from_reader, parse_multipart_body, DICOMJson, DICOMJsonTagValue};
 use error_chain::error_chain;
 use log::{debug, error, info, log_enabled, trace, warn, Level};
 use serde_json::Value;
-
-error_chain! {
-    foreign_links {
-        Io(std::io::Error);
-        HttpRequest(reqwest::Error);
-        Serde(serde_json::Error);
-        Dicom(dicom::object::Error);
-        DicomCastValue(dicom::core::value::CastValueError);
-    }
-
-    errors{
-        Custom(t: String) {
-            description("custom")
-            display("{}", t)
-        }
-    }
-}
 
 #[async_std::main]
 async fn main() -> Result<()> {
@@ -48,19 +32,20 @@ async fn main() -> Result<()> {
         .unwrap();
     println!("JSON body:\n{:?}", json);
 
-    // // if let DICOMJsonTagValue::String(study_instance_uid) = &json[0]["0020000D"].Value[0] {
-    // //     println!("{}", study_instance_uid);
-    // // }
-    // let study_instance_uid = json[0]["0020000D"].Value[0].as_str().unwrap();
-    // println!("{}", study_instance_uid);
+    // if let DICOMJsonTagValue::String(study_instance_uid) = &json[0]["0020000D"].Value[0] {
+    //     println!("{}", study_instance_uid);
+    // }
+    let study_instance_uid = json[0]["0020000D"].Value[0].as_str().unwrap();
+    println!("{}", study_instance_uid);
 
-    // info!("querying series");
-    // let json: DICOMJson = client
-    //     .find_series(study_instance_uid)
-    //     .limit(10)
-    //     .json()
-    //     .await?;
-    // println!("JSON body:\n{:?}", json);
+    info!("querying series");
+    let json: DICOMJson = client
+        .find_series(study_instance_uid)
+        .limit(10)
+        .json()
+        .await
+        .unwrap();
+    println!("JSON body:\n{:?}", json);
 
     // let series_instance_uid = json[0]["0020000E"].Value[0].as_str().unwrap();
 

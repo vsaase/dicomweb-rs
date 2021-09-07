@@ -61,6 +61,18 @@ impl DICOMWebClientSurf {
         self
     }
 
+    pub fn find_series(mut self, study_instance_uid: &str) -> Self {
+        if let Some(ref mut url) = self.url {
+            let mut path: String = url.path().to_owned();
+            path.push_str(&self.qido_url_prefix);
+            path.push_str("/studies");
+            path.push_str(study_instance_uid);
+            path.push_str("/series");
+            url.set_path(&path.as_str());
+        };
+        self
+    }
+
     pub fn patient_name(mut self, name_query: &str) -> Self {
         if let Some(ref mut url) = self.url {
             url.query_pairs_mut().append_pair("PatientName", name_query);
