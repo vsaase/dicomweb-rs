@@ -1,5 +1,5 @@
 [package]
-name = "blocking"
+name = "blocking_reqwest"
 version = "0.1.0"
 authors = ["Victor Saase <vsaase@gmail.com>"]
 edition = "2018"

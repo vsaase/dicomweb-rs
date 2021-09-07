@@ -2,7 +2,7 @@
 
 members = [
     "util",
-    "examples/blocking",
+    "examples/blocking_reqwest",
     "examples/async_reqwest",
     "examples/async_surf",
     "client",

@@ -37,62 +37,12 @@ error_chain! {
 }
 
 pub trait ReqwestClientBuilder {
-    type Client: ReqwestClient;
+    type Client: ReqwestClient + Default;
+
+    fn new() -> Self;
     fn proxy(self, proxy: Proxy) -> Self;
     fn default_headers(self, headers: HeaderMap) -> Self;
     fn build(self) -> reqwest::Result<Self::Client>;
-}
-
-#[derive(Default)]
-pub struct DICOMWebClientBuilder<T> {
-    client_builder: T,
-    url: String,
-    qido_url_prefix: String,
-    wado_url_prefix: String,
-    stow_url_prefix: String,
-    ups_url_prefix: String,
-}
-
-impl<T: ReqwestClientBuilder + Default> DICOMWebClientBuilder<T> {
-    fn new(url: &str) -> Self
-    where
-        Self: Sized,
-    {
-        Self {
-            url: String::from(url),
-            ..Default::default()
-        }
-    }
-
-    #[cfg(not(target_arch = "wasm32"))]
-    fn proxy(mut self, proxy: reqwest::Proxy) -> Self {
-        self.client_builder = self.client_builder.proxy(proxy);
-        self
-    }
-
-    pub fn default_headers(mut self, key: &'static str, value: &str) -> Self {
-        let mut headers = header::HeaderMap::new();
-        headers.insert(key, value.parse().unwrap());
-
-        self.client_builder = self.client_builder.default_headers(headers);
-        self
-    }
-
-    pub fn build(self) -> reqwest::Result<DICOMWebClient<T::Client>> {
-        let build = self.client_builder.build();
-        if let Ok(client) = build {
-            Ok(DICOMWebClient {
-                client: client,
-                url: self.url,
-                qido_url_prefix: self.qido_url_prefix,
-                wado_url_prefix: self.wado_url_prefix,
-                stow_url_prefix: self.stow_url_prefix,
-                ups_url_prefix: self.ups_url_prefix,
-            })
-        } else {
-            Err(build.err().unwrap())
-        }
-    }
 }
 
 pub trait ReqwestClient {
@@ -103,8 +53,9 @@ pub trait ReqwestClient {
 }
 
 #[derive(Default)]
-pub struct DICOMWebClient<T> {
-    client: T,
+pub struct DICOMWebClient<C, B> {
+    client: Option<C>,
+    client_builder: Option<B>,
     url: String,
     qido_url_prefix: String,
     wado_url_prefix: String,
@@ -112,41 +63,70 @@ pub struct DICOMWebClient<T> {
     ups_url_prefix: String,
 }
 
-impl<T: ReqwestClient> DICOMWebClient<T> {
-    pub fn new(
-        url: &str,
-    ) -> DICOMWebClient<<<T as ReqwestClient>::ClientBuilder as ReqwestClientBuilder>::Client> {
-        let mut builder = DICOMWebClientBuilder::<T::ClientBuilder>::new(url);
+impl<C: ReqwestClient, B: ReqwestClientBuilder<Client = C>> DICOMWebClient<C, B> {
+    #[cfg(not(target_arch = "wasm32"))]
+    fn proxy(mut self, proxy: reqwest::Proxy) -> Self {
+        if let Some(client_builder) = self.client_builder.take() {
+            self.client_builder = Some(client_builder.proxy(proxy));
+        }
+        self
+    }
+
+    fn make_client(&mut self) {
+        if let Some(client_builder) = self.client_builder.take() {
+            self.client = client_builder.build().ok();
+        }
+    }
+
+    pub fn default_headers(mut self, key: &'static str, value: &str) -> Self {
+        let mut headers = header::HeaderMap::new();
+        headers.insert(key, value.parse().unwrap());
+
+        if let Some(client_builder) = self.client_builder.take() {
+            self.client_builder = Some(client_builder.default_headers(headers));
+        }
+        self
+    }
+
+    pub fn new(url: &str) -> Self {
+        let client_builder = Some(B::new());
+        let mut dicomwebclient = Self {
+            client: None,
+            client_builder,
+            url: String::from(url),
+            qido_url_prefix: String::default(),
+            wado_url_prefix: String::default(),
+            stow_url_prefix: String::default(),
+            ups_url_prefix: String::default(),
+        };
 
         #[cfg(not(target_arch = "wasm32"))]
         if let Ok(proxy) = env::var("http_proxy") {
-            builder = builder.proxy(reqwest::Proxy::http(proxy).unwrap());
+            dicomwebclient = dicomwebclient.proxy(reqwest::Proxy::http(proxy).unwrap());
         }
 
-        builder.build().unwrap()
+        dicomwebclient
     }
 
-    pub fn builder(url: &str) -> DICOMWebClientBuilder<T::ClientBuilder> {
-        DICOMWebClientBuilder::<T::ClientBuilder>::new(url)
-    }
-
-    pub fn find_studies(&self) -> QueryBuilder<T::RequestBuilder> {
+    pub fn find_studies(&mut self) -> QueryBuilder<C::RequestBuilder> {
+        self.make_client();
         let mut url = self.url.clone();
         url.push_str(&self.qido_url_prefix);
         url.push_str("/studies");
         QueryBuilder {
-            request_builder: self.client.get(&url),
+            request_builder: self.client.as_ref().unwrap().get(&url),
         }
     }
 
-    pub fn find_series(&self, study_instance_uid: &str) -> QueryBuilder<T::RequestBuilder> {
+    pub fn find_series(&mut self, study_instance_uid: &str) -> QueryBuilder<C::RequestBuilder> {
+        self.make_client();
         let mut url = self.url.clone();
         url.push_str(&self.qido_url_prefix);
         url.push_str("/studies/");
         url.push_str(study_instance_uid);
         url.push_str("/series");
         QueryBuilder {
-            request_builder: self.client.get(&url),
+            request_builder: self.client.as_ref().unwrap().get(&url),
         }
     }
 
@@ -154,7 +134,7 @@ impl<T: ReqwestClient> DICOMWebClient<T> {
         &self,
         study_instance_uid: &str,
         series_instance_uid: &str,
-    ) -> QueryBuilder<T::RequestBuilder> {
+    ) -> QueryBuilder<C::RequestBuilder> {
         let mut url = self.url.clone();
         url.push_str(&self.qido_url_prefix);
         url.push_str("/studies/");
@@ -163,7 +143,7 @@ impl<T: ReqwestClient> DICOMWebClient<T> {
         url.push_str(series_instance_uid);
         url.push_str("/instances");
         QueryBuilder {
-            request_builder: self.client.get(&url),
+            request_builder: self.client.as_ref().unwrap().get(&url),
         }
     }
 
@@ -172,7 +152,7 @@ impl<T: ReqwestClient> DICOMWebClient<T> {
         study_instance_uid: &str,
         series_instance_uid: &str,
         sop_instance_uid: &str,
-    ) -> QueryBuilder<T::RequestBuilder> {
+    ) -> QueryBuilder<C::RequestBuilder> {
         let mut url = self.url.clone();
         url.push_str(&self.wado_url_prefix);
         url.push_str("/studies/");
@@ -182,7 +162,7 @@ impl<T: ReqwestClient> DICOMWebClient<T> {
         url.push_str("/instances/");
         url.push_str(sop_instance_uid);
         QueryBuilder {
-            request_builder: self.client.get(&url),
+            request_builder: self.client.as_ref().unwrap().get(&url),
         }
     }
 }

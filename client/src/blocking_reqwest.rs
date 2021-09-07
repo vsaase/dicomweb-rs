@@ -10,17 +10,22 @@ use reqwest::Proxy;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
-use crate::{DICOMWebClient, DICOMWebClientBuilder};
+use crate::DICOMWebClient;
 use crate::{QueryBuilder, ReqwestClient, ReqwestClientBuilder};
 use crate::{RequestBuilderTrait, Result};
 
-pub type DICOMWebClientBuilderBlocking = DICOMWebClientBuilder<reqwest::blocking::ClientBuilder>;
-pub type DICOMWebClientBlocking = DICOMWebClient<reqwest::blocking::Client>;
+pub type DICOMWebClientBlocking =
+    DICOMWebClient<reqwest::blocking::Client, reqwest::blocking::ClientBuilder>;
 
 pub type QueryBuilderBlocking = QueryBuilder<reqwest::blocking::RequestBuilder>;
 
 impl ReqwestClientBuilder for reqwest::blocking::ClientBuilder {
     type Client = reqwest::blocking::Client;
+
+    fn new() -> Self {
+        Self::new()
+    }
+
     fn proxy(self, proxy: Proxy) -> Self {
         self.proxy(proxy)
     }
@@ -28,6 +33,7 @@ impl ReqwestClientBuilder for reqwest::blocking::ClientBuilder {
     fn default_headers(self, headers: HeaderMap) -> Self {
         self.default_headers(headers)
     }
+
     fn build(self) -> reqwest::Result<Self::Client> {
         self.build()
     }

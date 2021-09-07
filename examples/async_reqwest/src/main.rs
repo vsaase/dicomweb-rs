@@ -18,10 +18,8 @@ async fn main() -> Result<()> {
     // let url = "http://localhost:8080/dcm4chee-arc/aets/DCM4CHEE/rs";
     // let client = DICOMWebClient::new(url);
     info!("creating client");
-    let client = DICOMWebClientAsync::builder(url)
-        .default_headers("apikey", "9c8a1e06-9b19-4e36-81ff-3ece53bdb674")
-        .build()
-        .unwrap();
+    let mut client = DICOMWebClientAsync::new(url)
+        .default_headers("apikey", "9c8a1e06-9b19-4e36-81ff-3ece53bdb674");
     info!("querying studies");
     let json: DICOMJson = client
         .find_studies()

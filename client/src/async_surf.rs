@@ -2,7 +2,7 @@ use serde::de::DeserializeOwned;
 use std::{convert::TryInto, fmt::format};
 use surf::{Client, Config, Url};
 
-use crate::{DICOMWebClient, DICOMWebClientBuilder};
+use crate::DICOMWebClient;
 
 #[derive(Default, Debug)]
 pub struct DICOMWebClientSurf {
@@ -16,10 +16,7 @@ pub struct DICOMWebClientSurf {
 }
 
 impl DICOMWebClientSurf {
-    fn new(url: &str) -> Self
-    where
-        Self: Sized,
-    {
+    pub fn new(url: &str) -> Self {
         let url = url.to_owned() + "/";
         let config = Config::new();
         let client = Client::new();
@@ -88,16 +85,16 @@ impl DICOMWebClientSurf {
         self
     }
 
-    pub async fn json<T: DeserializeOwned>(self) -> surf::Result<T> {
+    pub async fn json<T: DeserializeOwned>(&self) -> surf::Result<T> {
         self.client
-            .get(self.url.unwrap().as_str())
+            .get(self.url.as_ref().unwrap().as_str())
             .recv_json()
             .await
     }
 
-    pub async fn string(self) -> surf::Result<String> {
+    pub async fn string(&self) -> surf::Result<String> {
         self.client
-            .get(self.url.unwrap().as_str())
+            .get(self.url.as_ref().unwrap().as_str())
             .recv_string()
             .await
     }

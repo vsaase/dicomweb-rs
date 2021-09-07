@@ -17,10 +17,8 @@ fn main() -> Result<()> {
     // let url = "http://localhost:8080/dcm4chee-arc/aets/DCM4CHEE/rs";
     // let client = DICOMWebClient::new(url);
     info!("creating client");
-    let client = DICOMWebClientBlocking::builder(url)
-        .default_headers("apikey", "9c8a1e06-9b19-4e36-81ff-3ece53bdb674")
-        .build()
-        .unwrap();
+    let mut client = DICOMWebClientBlocking::new(url)
+        .default_headers("apikey", "9c8a1e06-9b19-4e36-81ff-3ece53bdb674");
     info!("querying studies");
     let json: DICOMJson = client.find_studies().patient_name("*").limit(10).json()?;
     println!("JSON body:\n{:?}", json);
