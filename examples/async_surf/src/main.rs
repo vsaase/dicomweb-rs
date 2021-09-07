@@ -45,24 +45,25 @@ async fn main() -> Result<()> {
         .unwrap();
     println!("JSON body:\n{:?}", json);
 
-    // let series_instance_uid = json[0]["0020000E"].Value[0].as_str().unwrap();
+    let series_instance_uid = json[0]["0020000E"].Value[0].as_str().unwrap();
 
-    // info!("querying instances");
-    // let json: DICOMJson = client
-    //     .find_instances(study_instance_uid, series_instance_uid)
-    //     .limit(10)
-    //     .json()
-    //     .await?;
-    // println!("JSON body:\n{:?}", json);
+    info!("querying instances");
+    let json: DICOMJson = client
+        .find_instances(study_instance_uid, series_instance_uid)
+        .limit(10)
+        .json()
+        .await
+        .unwrap();
+    println!("JSON body:\n{:?}", json);
 
-    // let sop_instance_uid = json[0]["00080018"].Value[0].as_str().unwrap();
+    let sop_instance_uid = json[0]["00080018"].Value[0].as_str().unwrap();
 
-    // info!("getting instance");
-    // let dicoms = client
-    //     .get_instance(study_instance_uid, series_instance_uid, sop_instance_uid)
-    //     .dicoms()
-    //     .await
-    //     .unwrap();
-    // println!("{:?}", dicoms[0].element_by_name("PatientName")?.to_str()?);
+    info!("getting instance");
+    let dicoms = client
+        .get_instance(study_instance_uid, series_instance_uid, sop_instance_uid)
+        .dicoms()
+        .await
+        .unwrap();
+    println!("{:?}", dicoms[0].element_by_name("PatientName")?.to_str()?);
     Ok(())
 }
