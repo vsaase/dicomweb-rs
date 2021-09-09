@@ -5,5 +5,7 @@ members = [
     "examples/blocking_reqwest",
     "examples/async_reqwest",
     "examples/async_surf",
+    "examples/server_tide",
     "client",
+    "server",
 ]
