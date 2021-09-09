@@ -7,29 +7,36 @@ use tide::prelude::*;
 use tide::Request;
 use walkdir::WalkDir;
 
-pub struct DICOMWebServer<'a> {
-    app: tide::Server<&'a DICOMWebServer<'a>>,
+#[derive(Clone)]
+pub struct ServerState {
     dicoms: Vec<DefaultDicomObject>,
+}
+
+pub struct DICOMWebServer {
+    app: tide::Server<ServerState>,
     qido_url_prefix: String,
     wado_url_prefix: String,
     stow_url_prefix: String,
     ups_url_prefix: String,
 }
 
-impl<'a> DICOMWebServer<'a> {
-    pub fn new() -> DICOMWebServer<'a> {
+impl DICOMWebServer {
+    pub fn new() -> DICOMWebServer {
+        DICOMWebServer::with_dicoms(vec![])
+    }
+
+    pub fn with_dicoms(dicoms: Vec<DefaultDicomObject>) -> DICOMWebServer {
         println!("making new DICOMWebServer");
         let qido_url_prefix = "".to_string();
-        let mut app = tide::new();
+        let serverstate = ServerState { dicoms };
+        let mut app = tide::with_state(serverstate);
         app.at(&("/".to_string()
             + &qido_url_prefix
             + if !qido_url_prefix.is_empty() { "/" } else { "" }
             + "studies"))
             .get(Self::find_studies);
-
         DICOMWebServer {
             app,
-            dicoms: vec![],
             qido_url_prefix,
             wado_url_prefix: String::default(),
             stow_url_prefix: String::default(),
@@ -37,8 +44,7 @@ impl<'a> DICOMWebServer<'a> {
         }
     }
 
-    pub fn from_dir(dir_path: &Path) -> DICOMWebServer<'a> {
-        let mut server = DICOMWebServer::new();
+    pub fn from_dir(dir_path: &Path) -> DICOMWebServer {
         println!("walking directory {}", dir_path.to_str().unwrap());
         let dicoms = WalkDir::new(dir_path)
             .into_iter()
@@ -46,8 +52,7 @@ impl<'a> DICOMWebServer<'a> {
             .filter_map(|x| open_file(x.path()).ok())
             .collect();
         // .for_each(|x| println!("{}", x.path().display()));
-        server.dicoms = dicoms;
-        server
+        DICOMWebServer::with_dicoms(dicoms)
     }
 
     pub async fn listen(self, listener: &str) -> io::Result<()> {
@@ -55,8 +60,9 @@ impl<'a> DICOMWebServer<'a> {
         Ok(())
     }
 
-    async fn find_studies(mut req: Request<()>) -> tide::Result<serde_json::Value> {
-        let obj = self.dicoms[0];
+    async fn find_studies(mut req: Request<ServerState>) -> tide::Result<serde_json::Value> {
+        let serverstate = req.state();
+        let obj = &serverstate.dicoms[0];
         Ok(json!([{
             "00080005" :
             {

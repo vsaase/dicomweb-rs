@@ -32,46 +32,50 @@ error_chain! {
     }
 }
 
+#[derive(Debug)]
+enum MultipartParserStates {
+    NextPart,
+    InHeader,
+    InBinary,
+}
+
 pub fn parse_multipart_body(body: Bytes, boundary: &str) -> Result<Vec<Vec<u8>>> {
     let mut reader = Cursor::new(body).reader();
     let mut line = String::new();
 
     let mut result = vec![];
 
-    let mut state = "finding begin";
+    let mut state = MultipartParserStates::NextPart;
     let mut content_length: usize = 0;
+
     loop {
         match reader.read_line(&mut line) {
             Ok(bytes_read) => {
                 if bytes_read == 0 {
                     break;
                 }
-                trace!("{}", state);
-                trace!("{}", line);
+                trace!("{:?}", state);
+                trace!("{:?}", line);
                 match state {
-                    "finding begin" => {
+                    MultipartParserStates::NextPart => {
                         if line.trim().ends_with(boundary) {
                             debug!("found start of part in multipart body");
-                            state = "in header, need content length";
+                            state = MultipartParserStates::InHeader;
                         }
                     }
-                    "in header, need content length" => {
+                    MultipartParserStates::InHeader => {
                         if line.starts_with("Content-Length") {
                             content_length =
                                 usize::from_str_radix(line.split_whitespace().last().unwrap(), 10)
                                     .unwrap();
                             debug!("content length:{}", content_length);
-                            state = "in header, wait for end";
                         } else if line.trim() == "" {
-                            state = "binary data starts";
+                            state = MultipartParserStates::InBinary;
                         }
                     }
-                    "in header, wait for end" => {
-                        if line.trim() == "" {
-                            state = "binary data starts";
-                        }
+                    _ => {
+                        panic!("in wrong state when reading multipart header")
                     }
-                    _ => {}
                 }
 
                 line.clear();
@@ -82,7 +86,7 @@ pub fn parse_multipart_body(body: Bytes, boundary: &str) -> Result<Vec<Vec<u8>>>
             }
         };
         match state {
-            "binary data starts" => {
+            MultipartParserStates::InBinary => {
                 if content_length > 0 {
                     let mut buffer = vec![0u8; content_length];
                     reader.read_exact(&mut buffer)?;
@@ -94,7 +98,7 @@ pub fn parse_multipart_body(body: Bytes, boundary: &str) -> Result<Vec<Vec<u8>>>
                     let len = buffer.len() - boundary.len() - 6;
                     result.push(buffer[..len].into());
                 }
-                state = "finding begin"
+                state = MultipartParserStates::NextPart
             }
             _ => {}
         }
