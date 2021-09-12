@@ -2,9 +2,7 @@ use std::io::Cursor;
 
 use bytes::Buf;
 use dicomweb_client::async_surf::DICOMWebClientSurf;
-use dicomweb_client::{DICOMQueryBuilder, DICOMWebClient, Result};
-use dicomweb_util::{dicom_from_reader, parse_multipart_body, DICOMJson, DICOMJsonTagValue};
-use error_chain::error_chain;
+use dicomweb_client::{DICOMJson, DICOMQueryBuilder, DICOMWebClient, Result};
 use log::{debug, error, info, log_enabled, trace, warn, Level};
 use serde_json::Value;
 
@@ -26,8 +24,7 @@ async fn main() -> Result<()> {
         .patient_name("*")
         .limit(10)
         .json()
-        .await
-        .unwrap();
+        .await?;
     println!("JSON body:\n{:?}", json);
 
     // if let DICOMJsonTagValue::String(study_instance_uid) = &json[0]["0020000D"].Value[0] {
@@ -41,8 +38,7 @@ async fn main() -> Result<()> {
         .find_series(study_instance_uid)
         .limit(10)
         .json()
-        .await
-        .unwrap();
+        .await?;
     println!("JSON body:\n{:?}", json);
 
     let series_instance_uid = json[0]["0020000E"].Value[0].as_str().unwrap();
@@ -52,8 +48,7 @@ async fn main() -> Result<()> {
         .find_instances(study_instance_uid, series_instance_uid)
         .limit(10)
         .json()
-        .await
-        .unwrap();
+        .await?;
     println!("JSON body:\n{:?}", json);
 
     let sop_instance_uid = json[0]["00080018"].Value[0].as_str().unwrap();
@@ -62,8 +57,7 @@ async fn main() -> Result<()> {
     let dicoms = client
         .get_instance(study_instance_uid, series_instance_uid, sop_instance_uid)
         .dicoms()
-        .await
-        .unwrap();
+        .await?;
     println!("{:?}", dicoms[0].element_by_name("PatientName")?.to_str()?);
     Ok(())
 }

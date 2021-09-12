@@ -9,6 +9,12 @@ use surf::Url;
 
 use crate::DICOMWebClient;
 
+impl From<surf::Error> for crate::Error {
+    fn from(e: surf::Error) -> Self {
+        crate::Error::Surf(e)
+    }
+}
+
 #[derive(Default, Debug)]
 pub struct DICOMWebClientSurf {
     client: surf::Client,

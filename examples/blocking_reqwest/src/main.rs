@@ -8,7 +8,6 @@ use dicomweb_client::{
 use dicomweb_util::{
     dicom_from_reader, json2dicom, parse_multipart_body, DICOMJson, DICOMJsonTagValue,
 };
-use error_chain::error_chain;
 use log::{debug, error, info, log_enabled, trace, warn, Level};
 use serde_json::Value;
 

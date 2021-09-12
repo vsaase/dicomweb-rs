@@ -1,27 +1,27 @@
-use error_chain::error_chain;
+use thiserror::Error;
 
 pub use dicomweb_util::DICOMJson;
-
 pub mod async_surf;
 pub mod reqwest;
 
-error_chain! {
-    foreign_links {
-        Io(std::io::Error);
-        HttpRequest(reqwest::Error);
-        Serde(serde_json::Error);
-        Dicom(dicom::object::Error);
-        DicomCastValue(dicom::core::value::CastValueError);
-        Util(dicomweb_util::Error);
-    }
-
-    errors{
-        Custom(t: String) {
-            description("custom")
-            display("{}", t)
-        }
-    }
+#[derive(Error, Debug)]
+pub enum Error {
+    #[error("{0}")]
+    Io(#[from] std::io::Error),
+    #[error("{0}")]
+    Reqwest(#[from] reqwest::Error),
+    #[error("{0}")]
+    Surf(surf::Error),
+    #[error("{0}")]
+    Serde(#[from] serde_json::Error),
+    #[error("{0}")]
+    Dicom(#[from] dicom::object::Error),
+    #[error("{0}")]
+    DicomCastValue(#[from] dicom::core::value::CastValueError),
+    #[error("{0}")]
+    Util(#[from] dicomweb_util::Error),
 }
+pub type Result<T> = std::result::Result<T, Error>;
 
 pub trait DICOMWebClient {
     type QueryBuilder: DICOMQueryBuilder;

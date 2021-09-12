@@ -5,7 +5,6 @@ use dicom::object::{
     StandardDataDictionary,
 };
 use enum_as_inner::EnumAsInner;
-use error_chain::error_chain;
 use log::{debug, error, info, log_enabled, trace, warn, Level};
 use serde::Deserialize;
 use serde_json::Value;
@@ -14,23 +13,22 @@ use std::{
     collections::HashMap,
     io::{self, Cursor, Read},
 };
+use thiserror::Error;
 
-error_chain! {
-    foreign_links {
-        Io(std::io::Error);
-        Serde(serde_json::Error);
-        Dicom(dicom::object::Error);
-        DicomMeta(dicom::object::meta::Error);
-        DicomCastValue(dicom::core::value::CastValueError);
-    }
-
-    errors{
-        Custom(t: String) {
-            description("custom")
-            display("{}", t)
-        }
-    }
+#[derive(Error, Debug)]
+pub enum Error {
+    #[error("{0}")]
+    Io(#[from] std::io::Error),
+    #[error("{0}")]
+    Serde(#[from] serde_json::Error),
+    #[error("{0}")]
+    Dicom(#[from] dicom::object::Error),
+    #[error("{0}")]
+    DicomCastValue(#[from] dicom::core::value::CastValueError),
+    #[error("{0}")]
+    Custom(String),
 }
+pub type Result<T> = std::result::Result<T, Error>;
 
 pub mod decode;
 
@@ -119,7 +117,7 @@ pub fn dicom_from_reader<R: Read>(mut file: R) -> Result<DefaultDicomObject> {
     if let Ok(ds) = result {
         Ok(ds)
     } else {
-        Err(ErrorKind::Custom(String::from("error reading dicom")).into())
+        Err(Error::Custom(String::from("error reading dicom")).into())
     }
 }
 
