@@ -1,4 +1,4 @@
-use crate::Result;
+use crate::{DICOMQueryBuilder, Result};
 use bytes::{Buf, Bytes};
 use dicom::object::DefaultDicomObject;
 use dicomweb_util::{dicom_from_reader, parse_multipart_body};
@@ -74,19 +74,27 @@ pub struct QueryBuilderSurf {
 struct Query {
     PatientName: Option<String>,
     limit: Option<u32>,
+    offset: Option<u32>,
 }
 
-impl QueryBuilderSurf {
-    pub fn patient_name(mut self, name_query: &str) -> Self {
+impl DICOMQueryBuilder for QueryBuilderSurf {
+    fn patient_name(mut self, name_query: &str) -> Self {
         self.query.PatientName = Some(name_query.to_string());
         self
     }
 
-    pub fn limit(mut self, limit: u32) -> Self {
+    fn limit(mut self, limit: u32) -> Self {
         self.query.limit = Some(limit);
         self
     }
 
+    fn offset(mut self, offset: u32) -> Self {
+        self.query.offset = Some(offset);
+        self
+    }
+}
+
+impl QueryBuilderSurf {
     pub async fn json<T: DeserializeOwned>(self) -> surf::Result<T> {
         self.request_builder.query(&self.query)?.recv_json().await
     }

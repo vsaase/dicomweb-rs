@@ -1,7 +1,3 @@
-use http::{self, HeaderMap};
-
-use serde::Serialize;
-
 use error_chain::error_chain;
 
 pub use dicomweb_util::DICOMJson;
@@ -28,7 +24,7 @@ error_chain! {
 }
 
 pub trait DICOMWebClient {
-    type QueryBuilder;
+    type QueryBuilder: DICOMQueryBuilder;
 
     fn default_headers(self, key: &'static str, value: &str) -> Self;
 
@@ -79,6 +75,12 @@ pub trait DICOMWebClient {
     fn get_url(&mut self, url: &str) -> Self::QueryBuilder;
     fn get_qido_prefix(&self) -> &str;
     fn get_wado_prefix(&self) -> &str;
+}
+
+pub trait DICOMQueryBuilder {
+    fn patient_name(self, name_query: &str) -> Self;
+    fn limit(self, limit: u32) -> Self;
+    fn offset(self, offset: u32) -> Self;
 }
 
 #[cfg(test)]

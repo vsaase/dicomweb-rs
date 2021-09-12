@@ -2,7 +2,9 @@ use std::io::Cursor;
 
 use bytes::Buf;
 use dicomweb_client::Result;
-use dicomweb_client::{reqwest::blocking_reqwest::DICOMWebClientBlocking, DICOMWebClient};
+use dicomweb_client::{
+    reqwest::blocking_reqwest::DICOMWebClientBlocking, DICOMQueryBuilder, DICOMWebClient,
+};
 use dicomweb_util::{
     dicom_from_reader, json2dicom, parse_multipart_body, DICOMJson, DICOMJsonTagValue,
 };
