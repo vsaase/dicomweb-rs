@@ -2,7 +2,7 @@ use std::io::Cursor;
 
 use bytes::Buf;
 use dicomweb_client::async_surf::DICOMWebClientSurf;
-use dicomweb_client::{Result, DICOMWebClient};
+use dicomweb_client::{DICOMWebClient, Result};
 use dicomweb_util::{dicom_from_reader, parse_multipart_body, DICOMJson, DICOMJsonTagValue};
 use error_chain::error_chain;
 use log::{debug, error, info, log_enabled, trace, warn, Level};
@@ -18,7 +18,7 @@ async fn main() -> Result<()> {
     // let url = "http://localhost:8080/dcm4chee-arc/aets/DCM4CHEE/rs";
     // let client = DICOMWebClient::new(url);
     info!("creating client");
-    let client = DICOMWebClientSurf::new(url)
+    let mut client = DICOMWebClientSurf::new(url)
         .default_headers("apikey", "9c8a1e06-9b19-4e36-81ff-3ece53bdb674");
     info!("querying studies");
     let json: DICOMJson = client
