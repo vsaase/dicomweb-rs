@@ -1,6 +1,7 @@
 use std::convert::TryFrom;
 use std::io::Cursor;
 
+use crate::Result;
 use bytes::Buf;
 use dicom::object::DefaultDicomObject;
 use dicomweb_util::{dicom_from_reader, parse_multipart_body};
@@ -10,9 +11,8 @@ use reqwest::Proxy;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
-use crate::DICOMWebClientReqwest;
-use crate::{QueryBuilderReqwest, RequestBuilderTrait};
-use crate::{ReqwestClient, ReqwestClientBuilder, Result};
+use super::{DICOMWebClientReqwest, QueryBuilderReqwest, RequestBuilderTrait};
+use super::{ReqwestClient, ReqwestClientBuilder};
 
 pub type DICOMWebClientAsync = DICOMWebClientReqwest<reqwest::Client, reqwest::ClientBuilder>;
 

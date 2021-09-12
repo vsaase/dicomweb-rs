@@ -21,8 +21,6 @@ pub struct DICOMWebClientSurf {
 }
 
 impl DICOMWebClient for DICOMWebClientSurf {
-    type Client = surf::Client;
-    type Config = surf::Config;
     type QueryBuilder = QueryBuilderSurf;
 
     fn default_headers(mut self, key: &'static str, value: &str) -> Self {
@@ -30,16 +28,21 @@ impl DICOMWebClient for DICOMWebClientSurf {
         self
     }
 
-    fn find_studies(&mut self) -> Self::QueryBuilder {
-        let mut url = self.url.clone().unwrap();
-        let mut path: String = url.path().to_owned();
-        path.push_str(&self.qido_url_prefix);
-        path.push_str("/studies");
-        url.set_path(&path.as_str());
+    fn get_url(&mut self, url: &str) -> Self::QueryBuilder {
+        let mut newurl = self.url.clone().unwrap();
+        let path = format!("{}{}", newurl.path(), url);
+        newurl.set_path(&path.as_str());
         QueryBuilderSurf {
-            request_builder: self.client.get(url),
+            request_builder: self.client.get(newurl),
             query: Default::default(),
         }
+    }
+
+    fn get_qido_prefix(&self) -> &str {
+        &self.qido_url_prefix
+    }
+    fn get_wado_prefix(&self) -> &str {
+        &self.wado_url_prefix
     }
 }
 
@@ -60,71 +63,6 @@ impl DICOMWebClientSurf {
     //     self.client_builder = self.client_builder.proxy(proxy);
     //     self
     // }
-
-    pub fn build(mut self) -> Result<DICOMWebClientSurf> {
-        self.client = self.config.clone().try_into().unwrap();
-        Ok(self)
-    }
-
-    pub fn builder(url: &str) -> Self {
-        Self::new(url)
-    }
-
-    pub fn find_series(&self, study_instance_uid: &str) -> QueryBuilderSurf {
-        let mut url = self.url.clone().unwrap();
-        let mut path: String = url.path().to_owned();
-        path.push_str(&self.qido_url_prefix);
-        path.push_str("/studies/");
-        path.push_str(study_instance_uid);
-        path.push_str("/series");
-        url.set_path(&path.as_str());
-        QueryBuilderSurf {
-            request_builder: self.client.get(url),
-            query: Default::default(),
-        }
-    }
-
-    pub fn find_instances(
-        &self,
-        study_instance_uid: &str,
-        series_instance_uid: &str,
-    ) -> QueryBuilderSurf {
-        let mut url = self.url.clone().unwrap();
-        let mut path: String = url.path().to_owned();
-        path.push_str(&self.qido_url_prefix);
-        path.push_str("/studies/");
-        path.push_str(study_instance_uid);
-        path.push_str("/series/");
-        path.push_str(series_instance_uid);
-        path.push_str("/instances");
-        url.set_path(&path.as_str());
-        QueryBuilderSurf {
-            request_builder: self.client.get(url),
-            query: Default::default(),
-        }
-    }
-
-    pub fn get_instance(
-        &self,
-        study_instance_uid: &str,
-        series_instance_uid: &str,
-        sop_instance_uid: &str,
-    ) -> QueryBuilderSurf {
-        let mut url = self.url.clone().unwrap();
-        let mut path: String = url.path().to_owned();
-        path.push_str(&self.wado_url_prefix);
-        path.push_str("/studies/");
-        path.push_str(study_instance_uid);
-        path.push_str("/series/");
-        path.push_str(series_instance_uid);
-        path.push_str("/instances/");
-        path.push_str(sop_instance_uid);
-        url.set_path(&path.as_str());
-        QueryBuilderSurf {
-            request_builder: self.client.get(url),
-            query: Default::default(),
-        }
-    }
 }
 
 pub struct QueryBuilderSurf {
