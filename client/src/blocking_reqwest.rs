@@ -10,14 +10,14 @@ use reqwest::Proxy;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
-use crate::DICOMWebClient;
-use crate::{QueryBuilder, ReqwestClient, ReqwestClientBuilder};
+use crate::DICOMWebClientReqwest;
+use crate::{QueryBuilderReqwest, ReqwestClient, ReqwestClientBuilder};
 use crate::{RequestBuilderTrait, Result};
 
 pub type DICOMWebClientBlocking =
-    DICOMWebClient<reqwest::blocking::Client, reqwest::blocking::ClientBuilder>;
+DICOMWebClientReqwest<reqwest::blocking::Client, reqwest::blocking::ClientBuilder>;
 
-pub type QueryBuilderBlocking = QueryBuilder<reqwest::blocking::RequestBuilder>;
+pub type QueryBuilderBlocking = QueryBuilderReqwest<reqwest::blocking::RequestBuilder>;
 
 impl ReqwestClientBuilder for reqwest::blocking::ClientBuilder {
     type Client = reqwest::blocking::Client;

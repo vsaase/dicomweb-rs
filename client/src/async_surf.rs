@@ -3,26 +3,43 @@ use bytes::{Buf, Bytes};
 use dicom::object::DefaultDicomObject;
 use dicomweb_util::{dicom_from_reader, parse_multipart_body};
 use serde::de::DeserializeOwned;
-use std::{convert::TryInto, fmt::format, io::Cursor};
-use surf::{Client, Config, Url};
+use std::{convert::TryInto, fmt::format, io::Cursor, marker::PhantomData};
+use surf::{Url};
 
 use crate::DICOMWebClient;
 
 #[derive(Default, Debug)]
-pub struct DICOMWebClientSurf {
-    client: Client,
-    config: Config,
+pub struct DICOMWebClientSurf<'a> {
+    client: surf::Client,
+    config: surf::Config,
     url: Option<Url>,
     qido_url_prefix: String,
     wado_url_prefix: String,
     stow_url_prefix: String,
     ups_url_prefix: String,
+    lifetime_phantom: &'a PhantomData<()>
 }
 
-impl DICOMWebClientSurf {
+impl<'a> DICOMWebClient for DICOMWebClientSurf<'a> {
+    type Client = surf::Client;
+    type Config = surf::Config;
+    type QueryBuilder = QueryBuilderSurf<'a>;
+
+    fn default_headers(mut self, key: &'static str, value: &str) -> Self {
+        self.config = self.config.add_header(key, value).unwrap();
+        self
+    }
+
+
+    fn find_studies(&mut self) -> Self::QueryBuilder {
+        todo!()
+    }
+}
+
+impl<'a> DICOMWebClientSurf<'a> {
     pub fn new(url: &str) -> Self {
-        let config = Config::new();
-        let client = Client::new();
+        let config = surf::Config::new();
+        let client = surf::Client::new();
         Self {
             client,
             config,
@@ -37,12 +54,8 @@ impl DICOMWebClientSurf {
     //     self
     // }
 
-    pub fn default_headers(mut self, key: &'static str, value: &str) -> Self {
-        self.config = self.config.add_header(key, value).unwrap();
-        self
-    }
 
-    pub fn build(mut self) -> Result<DICOMWebClientSurf> {
+    pub fn build(mut self) -> Result<DICOMWebClientSurf<'a>> {
         self.client = self.config.clone().try_into().unwrap();
         Ok(self)
     }
@@ -110,7 +123,7 @@ impl DICOMWebClientSurf {
 
 pub struct QueryBuilderSurf<'a> {
     url: Url,
-    client: &'a DICOMWebClientSurf,
+    client: &'a DICOMWebClientSurf<'a>,
 }
 
 impl<'a> QueryBuilderSurf<'a> {
