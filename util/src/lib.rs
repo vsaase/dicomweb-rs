@@ -32,6 +32,8 @@ error_chain! {
     }
 }
 
+pub mod decode;
+
 #[derive(Debug)]
 enum MultipartParserStates {
     NextPart,
@@ -137,12 +139,13 @@ pub struct DICOMJsonTag {
 }
 
 pub type DICOMJson = Vec<HashMap<String, DICOMJsonTag>>;
+pub type DicomResponse = InMemDicomObject<StandardDataDictionary>;
 
-pub fn json2dicom(injson: &str) -> Result<InMemDicomObject<StandardDataDictionary>> {
-    let parsed: DICOMJson = serde_json::from_str(injson)?;
+pub fn json2dicom(parsed: &Vec<Value>) -> Result<Vec<DicomResponse>> {
+    // let parsed: Vec<Value> = serde_json::from_str(injson)?;
     println!("{:?}", parsed);
 
-    let ds = InMemDicomObject::create_empty();
+    let ds = parsed.iter().map(decode::decode_response_item).collect();
     Ok(ds)
 }
 
