@@ -17,8 +17,8 @@ fn main() -> Result<()> {
 
     // let url = "http://localhost:8088/rs";
     // let url = "http://hackathon.siim.org/dicomweb";
-    // let url = "http://localhost:8042/dicom-web";
-    let url = "http://localhost:8080/dcm4chee-arc/aets/DCM4CHEE/rs";
+    let url = "http://localhost:8042/dicom-web";
+    // let url = "http://localhost:8080/dcm4chee-arc/aets/DCM4CHEE/rs";
     // let client = DICOMWebClient::new(url);
     info!("creating client");
     let mut client = DICOMWebClientBlocking::new(url)
