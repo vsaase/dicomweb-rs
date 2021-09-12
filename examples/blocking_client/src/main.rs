@@ -23,37 +23,36 @@ fn main() -> Result<()> {
     let mut client = DICOMWebClientBlocking::new(url)
         .default_headers("apikey", "9c8a1e06-9b19-4e36-81ff-3ece53bdb674");
     info!("querying studies");
-    let json: Vec<Value> = client.find_studies().patient_name("*").limit(10).json()?;
-    println!("JSON body:\n{:?}", json);
 
-    let dicoms = json2dicom(&json)?;
-    // if let DICOMJsonTagValue::String(study_instance_uid) = &json[0]["0020000D"].Value[0] {
-    //     println!("{}", study_instance_uid);
-    // }
-    // let study_instance_uid = json[0]["0020000D"].Value[0].as_str().unwrap();
-    let study_instance_uid = dicoms[0].element_by_name("StudyInstanceUID")?.to_str()?;
+    let results = client
+        .find_studies()
+        .patient_name("*")
+        .limit(10)
+        .results()?;
+
+    let study_instance_uid = results[0].element_by_name("StudyInstanceUID")?.to_str()?;
     println!("{}", study_instance_uid);
 
     info!("querying series");
-    let json: DICOMJson = client.find_series(&study_instance_uid).limit(10).json()?;
-    println!("JSON body:\n{:?}", json);
+    let results = client
+        .find_series(&study_instance_uid)
+        .limit(10)
+        .results()?;
 
-    let series_instance_uid = json[0]["0020000E"].Value[0].as_str().unwrap();
+    let series_instance_uid = results[0].element_by_name("SeriesInstanceUID")?.to_str()?;
 
     info!("querying instances");
-    let json: DICOMJson = client
-        .find_instances(&study_instance_uid, series_instance_uid)
+    let results = client
+        .find_instances(&study_instance_uid, &series_instance_uid)
         .limit(10)
-        .json()?;
-    println!("JSON body:\n{:?}", json);
+        .results()?;
 
-    let sop_instance_uid = json[0]["00080018"].Value[0].as_str().unwrap();
+    let sop_instance_uid = results[0].element_by_name("SOPInstanceUID")?.to_str()?;
 
     info!("getting instance");
     let dicoms = client
-        .get_instance(&study_instance_uid, series_instance_uid, sop_instance_uid)
-        .dicoms()
-        .unwrap();
+        .get_instance(&study_instance_uid, &series_instance_uid, &sop_instance_uid)
+        .dicoms()?;
     println!("{:?}", dicoms[0].element_by_name("PatientName")?.to_str()?);
     Ok(())
 }

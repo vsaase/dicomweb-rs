@@ -1,13 +1,11 @@
 [package]
-name = "blocking_reqwest"
+name = "async_client"
 version = "0.1.0"
-authors = ["Victor Saase <vsaase@gmail.com>"]
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-dicomweb-util = { path = "../../util" }
 dicomweb-client = { path = "../../client" }
 dicom = "0.4"
 reqwest = { version = "0.11.3", features = ["json", "multipart", "stream"] }
@@ -16,3 +14,4 @@ serde_json = "1"
 log = "0.4"
 env_logger = "0.8.3"
 bytes = "1"
+async-std = { version = "1.10.0", features = ["attributes"] }

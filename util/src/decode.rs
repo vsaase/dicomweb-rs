@@ -7,6 +7,8 @@ use dicom::object::mem::InMemDicomObject;
 use serde_json::Value;
 use std::i64;
 
+/// this function is adapted from a pull request https://github.com/Enet4/dicom-rs/pull/174
+/// thanks to charbeljc
 pub fn decode_response_item(item: &Value) -> DicomResponse {
     let mut obj = InMemDicomObject::create_empty();
     match item {

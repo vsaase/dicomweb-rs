@@ -1,9 +1,10 @@
-use crate::{DICOMQueryBuilder, Result};
+use crate::{DICOMQueryBuilder, Error, Result};
 use bytes::{Buf, Bytes};
-use dicom::object::DefaultDicomObject;
-use dicomweb_util::{dicom_from_reader, parse_multipart_body};
+use dicom::object::{DefaultDicomObject, InMemDicomObject};
+use dicomweb_util::{dicom_from_reader, json2dicom, parse_multipart_body};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use std::{convert::TryInto, fmt::format, io::Cursor, marker::PhantomData};
 use surf::Url;
 
@@ -101,29 +102,30 @@ impl DICOMQueryBuilder for QueryBuilderSurf {
 }
 
 impl QueryBuilderSurf {
-    pub async fn json<T: DeserializeOwned>(self) -> surf::Result<T> {
-        self.request_builder.query(&self.query)?.recv_json().await
-    }
+    pub async fn results(self) -> Result<Vec<InMemDicomObject>> {
+        let mut res = self.request_builder.query(&self.query)?.send().await?;
+        let content_type = res.header("content-type").unwrap().get(0).unwrap();
+        println!("content-type: {}", content_type);
 
-    pub async fn string(self) -> surf::Result<String> {
-        self.request_builder.query(&self.query)?.recv_string().await
+        if !content_type.as_str().starts_with("application/dicom+json") {
+            return Err(Error::DICOMWeb(
+                "invalid content type, should be application/dicom+json".to_string(),
+            ));
+        }
+
+        let json: Vec<Value> = res.body_json().await?;
+        Ok(json2dicom(&json)?)
     }
 
     pub async fn dicoms(self) -> Result<Vec<DefaultDicomObject>> {
-        let mut res = self
-            .request_builder
-            .query(&self.query)
-            .unwrap()
-            .send()
-            .await
-            .unwrap();
+        let mut res = self.request_builder.query(&self.query)?.send().await?;
         let content_type = res.header("content-type").unwrap().get(0).unwrap();
         println!("content-type: {}", content_type);
         let (_, boundary) = content_type.as_str().rsplit_once("boundary=").unwrap();
         let boundary = String::from(boundary);
         println!("boundary: {}", boundary);
 
-        let body: Bytes = res.body_bytes().await.unwrap().into();
+        let body: Bytes = res.body_bytes().await?.into();
         let parts = parse_multipart_body(body, &boundary)?;
         let result = parts
             .iter()

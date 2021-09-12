@@ -1,3 +1,4 @@
+use dicom::object::InMemDicomObject;
 use thiserror::Error;
 
 pub use dicomweb_util::DICOMJson;
@@ -20,6 +21,10 @@ pub enum Error {
     DicomCastValue(#[from] dicom::core::value::CastValueError),
     #[error("{0}")]
     Util(#[from] dicomweb_util::Error),
+    #[error("{0}")]
+    Http(#[from] http::header::ToStrError),
+    #[error("{0}")]
+    DICOMWeb(String),
 }
 pub type Result<T> = std::result::Result<T, Error>;
 

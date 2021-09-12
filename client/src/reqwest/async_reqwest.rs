@@ -1,15 +1,16 @@
 use std::convert::TryFrom;
 use std::io::Cursor;
 
-use crate::Result;
+use crate::{Error, Result};
 use bytes::Buf;
-use dicom::object::DefaultDicomObject;
-use dicomweb_util::{dicom_from_reader, parse_multipart_body};
+use dicom::object::{DefaultDicomObject, InMemDicomObject};
+use dicomweb_util::{dicom_from_reader, json2dicom, parse_multipart_body};
 use http::header::HeaderName;
 use http::{HeaderMap, HeaderValue};
 use reqwest::Proxy;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
+use serde_json::Value;
 
 use super::{DICOMWebClientReqwest, QueryBuilderReqwest, RequestBuilderTrait};
 use super::{ReqwestClient, ReqwestClientBuilder};
@@ -62,9 +63,19 @@ impl RequestBuilderTrait for reqwest::RequestBuilder {
 }
 
 impl QueryBuilderAsync {
-    pub async fn json<T: DeserializeOwned>(self) -> reqwest::Result<T> {
+    pub async fn results(self) -> Result<Vec<InMemDicomObject>> {
         let res = self.send().await?;
-        res.json().await
+        let content_type = res.headers()["content-type"].to_str()?;
+        println!("content-type: {}", content_type);
+
+        if !content_type.starts_with("application/dicom+json") {
+            return Err(Error::DICOMWeb(
+                "invalid content type, should be application/dicom+json".to_string(),
+            ));
+        }
+
+        let json: Vec<Value> = res.json().await?;
+        Ok(json2dicom(&json)?)
     }
 
     pub async fn dicoms(self) -> Result<Vec<DefaultDicomObject>> {
