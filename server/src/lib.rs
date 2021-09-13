@@ -12,7 +12,7 @@ pub struct ServerState {
     dicoms: Vec<DefaultDicomObject>,
 }
 
-pub struct DICOMWebServer {
+pub struct DICOMwebServer {
     app: tide::Server<ServerState>,
     qido_url_prefix: String,
     wado_url_prefix: String,
@@ -20,13 +20,13 @@ pub struct DICOMWebServer {
     ups_url_prefix: String,
 }
 
-impl DICOMWebServer {
-    pub fn new() -> DICOMWebServer {
-        DICOMWebServer::with_dicoms(vec![])
+impl DICOMwebServer {
+    pub fn new() -> DICOMwebServer {
+        DICOMwebServer::with_dicoms(vec![])
     }
 
-    pub fn with_dicoms(dicoms: Vec<DefaultDicomObject>) -> DICOMWebServer {
-        println!("making new DICOMWebServer");
+    pub fn with_dicoms(dicoms: Vec<DefaultDicomObject>) -> DICOMwebServer {
+        println!("making new DICOMwebServer");
         let qido_url_prefix = "".to_string();
         let serverstate = ServerState { dicoms };
         let mut app = tide::with_state(serverstate);
@@ -35,7 +35,7 @@ impl DICOMWebServer {
             + if !qido_url_prefix.is_empty() { "/" } else { "" }
             + "studies"))
             .get(Self::find_studies);
-        DICOMWebServer {
+        DICOMwebServer {
             app,
             qido_url_prefix,
             wado_url_prefix: String::default(),
@@ -44,7 +44,7 @@ impl DICOMWebServer {
         }
     }
 
-    pub fn from_dir(dir_path: &Path) -> DICOMWebServer {
+    pub fn from_dir(dir_path: &Path) -> DICOMwebServer {
         println!("walking directory {}", dir_path.to_str().unwrap());
         let dicoms = WalkDir::new(dir_path)
             .into_iter()
@@ -52,7 +52,7 @@ impl DICOMWebServer {
             .filter_map(|x| open_file(x.path()).ok())
             .collect();
         // .for_each(|x| println!("{}", x.path().display()));
-        DICOMWebServer::with_dicoms(dicoms)
+        DICOMwebServer::with_dicoms(dicoms)
     }
 
     pub async fn listen(self, listener: &str) -> io::Result<()> {

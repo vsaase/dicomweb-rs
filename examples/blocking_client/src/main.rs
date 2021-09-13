@@ -3,7 +3,7 @@ use std::io::Cursor;
 use bytes::Buf;
 use dicomweb_client::Result;
 use dicomweb_client::{
-    reqwest::blocking_reqwest::DICOMWebClientBlocking, DICOMQueryBuilder, DICOMWebClient,
+    reqwest::blocking_reqwest::DICOMwebClientBlocking, DICOMQueryBuilder, DICOMwebClient,
 };
 use dicomweb_util::{
     dicom_from_reader, json2dicom, parse_multipart_body, DICOMJson, DICOMJsonTagValue,
@@ -18,14 +18,14 @@ fn main() -> Result<()> {
     // let url = "http://hackathon.siim.org/dicomweb";
     let url = "http://localhost:8042/dicom-web";
     // let url = "http://localhost:8080/dcm4chee-arc/aets/DCM4CHEE/rs";
-    // let client = DICOMWebClient::new(url);
+    // let client = DICOMwebClient::new(url);
     info!("creating client");
-    let mut client = DICOMWebClientBlocking::new(url)
+    let mut client = DICOMwebClientBlocking::new(url)
         .default_headers("apikey", "9c8a1e06-9b19-4e36-81ff-3ece53bdb674");
     info!("querying studies");
 
     let results = client
-        .find_studies()
+        .search_studies()
         .patient_name("*")
         .limit(10)
         .results()?;
@@ -35,7 +35,7 @@ fn main() -> Result<()> {
 
     info!("querying series");
     let results = client
-        .find_series(&study_instance_uid)
+        .search_series(&study_instance_uid)
         .limit(10)
         .results()?;
 
@@ -43,7 +43,7 @@ fn main() -> Result<()> {
 
     info!("querying instances");
     let results = client
-        .find_instances(&study_instance_uid, &series_instance_uid)
+        .search_instances(&study_instance_uid, &series_instance_uid)
         .limit(10)
         .results()?;
 
@@ -51,7 +51,7 @@ fn main() -> Result<()> {
 
     info!("getting instance");
     let dicoms = client
-        .get_instance(&study_instance_uid, &series_instance_uid, &sop_instance_uid)
+        .retrieve_instance(&study_instance_uid, &series_instance_uid, &sop_instance_uid)
         .dicoms()?;
     println!("{:?}", dicoms[0].element_by_name("PatientName")?.to_str()?);
     Ok(())

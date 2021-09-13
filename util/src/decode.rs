@@ -21,13 +21,14 @@ pub fn decode_response_item(item: &Value) -> DicomResponse {
                     let vr = raw_vr.parse::<VR>().unwrap();
                     let value = &v["Value"];
                     match vr {
-                        VR::AE => {
-                            todo!()
-                        }
+                        // VR::AE => {
+                        //     todo!()
+                        // }
                         VR::AT => {
                             todo!()
                         }
                         VR::AS
+                        | VR::AE
                         | VR::CS
                         | VR::LO
                         | VR::SH
@@ -122,11 +123,19 @@ pub fn decode_response_item(item: &Value) -> DicomResponse {
                         }
                         VR::IS => match value {
                             Value::Array(_) => {
-                                let v: Vec<i16> = serde_json::from_value(value.to_owned()).unwrap();
-                                let vv = &v[0];
-                                let elt =
-                                    DataElement::new(tag, vr, dicom_value!(Str, vv.to_string()));
-                                obj.put(elt);
+                                let v: Result<Vec<i16>, serde_json::Error> = serde_json::from_value(value.to_owned());
+                                if let Ok(v) = v {
+                                    let vv = &v[0];
+                                    let elt =
+                                        DataElement::new(tag, vr, dicom_value!(Str, vv.to_string()));
+                                    obj.put(elt);
+                                } else { // DCM4CHEE encodes IS as JSON strings
+                                    let v: Vec<String> = serde_json::from_value(value.to_owned()).unwrap();
+                                    let vv = &v[0];
+                                    let elt =
+                                        DataElement::new(tag, vr, dicom_value!(Str, vv));
+                                    obj.put(elt);
+                                }
                             }
                             Value::Null => {
                                 let elt = DataElement::new(tag, vr, dicom_value!());

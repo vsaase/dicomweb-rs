@@ -9,7 +9,7 @@ use serde::Serialize;
 use std::convert::TryFrom;
 use std::env;
 
-use crate::{DICOMQueryBuilder, DICOMWebClient};
+use crate::{DICOMQueryBuilder, DICOMwebClient};
 
 pub mod async_reqwest;
 pub mod blocking_reqwest;
@@ -31,7 +31,7 @@ pub trait ReqwestClient {
 }
 
 #[derive(Default)]
-pub struct DICOMWebClientReqwest<C, B> {
+pub struct DICOMwebClientReqwest<C, B> {
     client: Option<C>,
     config: Option<B>,
     url: String,
@@ -41,8 +41,8 @@ pub struct DICOMWebClientReqwest<C, B> {
     ups_url_prefix: String,
 }
 
-impl<C: ReqwestClient, B: ReqwestClientBuilder<Client = C>> DICOMWebClient
-    for DICOMWebClientReqwest<C, B>
+impl<C: ReqwestClient, B: ReqwestClientBuilder<Client = C>> DICOMwebClient
+    for DICOMwebClientReqwest<C, B>
 {
     type QueryBuilder = QueryBuilderReqwest<C::RequestBuilder>;
 
@@ -71,12 +71,12 @@ impl<C: ReqwestClient, B: ReqwestClientBuilder<Client = C>> DICOMWebClient
         &self.wado_url_prefix
     }
 
-    fn find_studies(&mut self) -> Self::QueryBuilder {
+    fn search_studies(&mut self) -> Self::QueryBuilder {
         let url = format!("{}/studies", self.get_qido_prefix());
         self.get_url(&url)
     }
 
-    fn find_series(&mut self, study_instance_uid: &str) -> Self::QueryBuilder {
+    fn search_series(&mut self, study_instance_uid: &str) -> Self::QueryBuilder {
         let url = format!(
             "{}/studies/{}/series",
             self.get_qido_prefix(),
@@ -85,7 +85,7 @@ impl<C: ReqwestClient, B: ReqwestClientBuilder<Client = C>> DICOMWebClient
         self.get_url(&url)
     }
 
-    fn find_instances(
+    fn search_instances(
         &mut self,
         study_instance_uid: &str,
         series_instance_uid: &str,
@@ -99,7 +99,7 @@ impl<C: ReqwestClient, B: ReqwestClientBuilder<Client = C>> DICOMWebClient
         self.get_url(&url)
     }
 
-    fn get_instance(
+    fn retrieve_instance(
         &mut self,
         study_instance_uid: &str,
         series_instance_uid: &str,
@@ -116,7 +116,7 @@ impl<C: ReqwestClient, B: ReqwestClientBuilder<Client = C>> DICOMWebClient
     }
 }
 
-impl<C: ReqwestClient, B: ReqwestClientBuilder<Client = C>> DICOMWebClientReqwest<C, B> {
+impl<C: ReqwestClient, B: ReqwestClientBuilder<Client = C>> DICOMwebClientReqwest<C, B> {
     #[cfg(not(target_arch = "wasm32"))]
     fn proxy(mut self, proxy: reqwest::Proxy) -> Self {
         if let Some(client_builder) = self.config.take() {
@@ -167,20 +167,10 @@ pub trait RequestBuilderTrait {
 }
 
 impl<T: RequestBuilderTrait> DICOMQueryBuilder for QueryBuilderReqwest<T> {
-    fn patient_name(mut self, name_query: &str) -> Self {
-        self.request_builder = self.request_builder.query(&[("PatientName", name_query)]);
-        self
-    }
-
-    fn limit(mut self, limit: u32) -> Self {
-        self.request_builder = self.request_builder.query(&[("limit", limit.to_string())]);
-        self
-    }
-
-    fn offset(mut self, offset: u32) -> Self {
+    fn query(mut self, key: &str, value: &str) -> Self {
         self.request_builder = self
             .request_builder
-            .query(&[("offset", offset.to_string())]);
+            .query(&[(key, value)]);
         self
     }
 }

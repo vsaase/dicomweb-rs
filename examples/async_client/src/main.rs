@@ -1,10 +1,10 @@
 use std::io::Cursor;
 
 use bytes::Buf;
-use dicomweb_client::async_surf::DICOMWebClientSurf;
+use dicomweb_client::async_surf::DICOMwebClientSurf;
 
-use dicomweb_client::reqwest::async_reqwest::DICOMWebClientAsync;
-use dicomweb_client::{DICOMJson, DICOMQueryBuilder, DICOMWebClient, Result};
+use dicomweb_client::reqwest::async_reqwest::DICOMwebClientAsync;
+use dicomweb_client::{DICOMJson, DICOMQueryBuilder, DICOMwebClient, Result};
 use log::{debug, error, info, log_enabled, trace, warn, Level};
 use serde_json::Value;
 
@@ -14,18 +14,18 @@ async fn main() -> Result<()> {
 
     // let url = "http://localhost:8088/rs";
     // let url = "http://hackathon.siim.org/dicomweb";
-    let url = "http://localhost:8042/dicom-web";
-    // let url = "http://localhost:8080/dcm4chee-arc/aets/DCM4CHEE/rs";
-    // let client = DICOMWebClient::new(url);
+    // let url = "http://localhost:8042/dicom-web";
+    let url = "http://localhost:8080/dcm4chee-arc/aets/DCM4CHEE/rs";
+    // let client = DICOMwebClient::new(url);
     info!("creating client");
-    // let mut client = DICOMWebClientAsync::new(url)
+    // let mut client = DICOMwebClientAsync::new(url)
     //     .default_headers("apikey", "9c8a1e06-9b19-4e36-81ff-3ece53bdb674");
-    let mut client = DICOMWebClientSurf::new(url)
+    let mut client = DICOMwebClientSurf::new(url)
         .default_headers("apikey", "9c8a1e06-9b19-4e36-81ff-3ece53bdb674");
     info!("querying studies");
 
     let results = client
-        .find_studies()
+        .search_studies()
         .patient_name("*")
         .limit(10)
         .results()
@@ -36,7 +36,7 @@ async fn main() -> Result<()> {
 
     info!("querying series");
     let results = client
-        .find_series(&study_instance_uid)
+        .search_series(&study_instance_uid)
         .limit(10)
         .results()
         .await?;
@@ -45,7 +45,7 @@ async fn main() -> Result<()> {
 
     info!("querying instances");
     let results = client
-        .find_instances(&study_instance_uid, &series_instance_uid)
+        .search_instances(&study_instance_uid, &series_instance_uid)
         .limit(10)
         .results()
         .await?;
@@ -54,7 +54,7 @@ async fn main() -> Result<()> {
 
     info!("getting instance");
     let dicoms = client
-        .get_instance(&study_instance_uid, &series_instance_uid, &sop_instance_uid)
+        .retrieve_instance(&study_instance_uid, &series_instance_uid, &sop_instance_uid)
         .dicoms()
         .await?;
     println!("{:?}", dicoms[0].element_by_name("PatientName")?.to_str()?);

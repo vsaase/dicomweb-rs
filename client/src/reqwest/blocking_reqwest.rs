@@ -13,10 +13,10 @@ use serde::Serialize;
 use serde_json::Value;
 
 use super::RequestBuilderTrait;
-use super::{DICOMWebClientReqwest, QueryBuilderReqwest, ReqwestClient, ReqwestClientBuilder};
+use super::{DICOMwebClientReqwest, QueryBuilderReqwest, ReqwestClient, ReqwestClientBuilder};
 
-pub type DICOMWebClientBlocking =
-    DICOMWebClientReqwest<reqwest::blocking::Client, reqwest::blocking::ClientBuilder>;
+pub type DICOMwebClientBlocking =
+    DICOMwebClientReqwest<reqwest::blocking::Client, reqwest::blocking::ClientBuilder>;
 
 pub type QueryBuilderBlocking = QueryBuilderReqwest<reqwest::blocking::RequestBuilder>;
 
@@ -72,7 +72,7 @@ impl QueryBuilderBlocking {
         println!("content-type: {}", content_type);
 
         if !content_type.starts_with("application/dicom+json") {
-            return Err(Error::DICOMWeb(
+            return Err(Error::DICOMweb(
                 "invalid content type, should be application/dicom+json".to_string(),
             ));
         }
@@ -86,7 +86,7 @@ impl QueryBuilderBlocking {
         let content_type = res.headers()["content-type"].to_str()?;
         println!("content-type: {}", content_type);
         if !content_type.starts_with("multipart/related") {
-            return Err(Error::DICOMWeb(
+            return Err(Error::DICOMweb(
                 "invalid content type, should be multipart/related".to_string(),
             ));
         }

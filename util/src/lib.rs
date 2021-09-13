@@ -74,7 +74,7 @@ pub fn parse_multipart_body(body: Bytes, boundary: &str) -> Result<Vec<Vec<u8>>>
                         }
                     }
                     _ => {
-                        panic!("in wrong state when reading multipart header")
+                        return Err(Error::Custom("in wrong state when reading multipart header".to_string()));
                     }
                 }
 

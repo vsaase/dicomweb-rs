@@ -5,10 +5,11 @@ use dicomweb_util::{dicom_from_reader, json2dicom, parse_multipart_body};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::collections::HashMap;
 use std::{convert::TryInto, fmt::format, io::Cursor, marker::PhantomData};
 use surf::Url;
 
-use crate::DICOMWebClient;
+use crate::DICOMwebClient;
 
 impl From<surf::Error> for crate::Error {
     fn from(e: surf::Error) -> Self {
@@ -17,7 +18,7 @@ impl From<surf::Error> for crate::Error {
 }
 
 #[derive(Default, Debug)]
-pub struct DICOMWebClientSurf {
+pub struct DICOMwebClientSurf {
     client: surf::Client,
     config: surf::Config,
     url: Option<Url>,
@@ -27,7 +28,7 @@ pub struct DICOMWebClientSurf {
     ups_url_prefix: String,
 }
 
-impl DICOMWebClient for DICOMWebClientSurf {
+impl DICOMwebClient for DICOMwebClientSurf {
     type QueryBuilder = QueryBuilderSurf;
 
     fn default_headers(mut self, key: &'static str, value: &str) -> Self {
@@ -53,7 +54,7 @@ impl DICOMWebClient for DICOMWebClientSurf {
     }
 }
 
-impl DICOMWebClientSurf {
+impl DICOMwebClientSurf {
     pub fn new(url: &str) -> Self {
         let config = surf::Config::new();
         let client = surf::Client::new();
@@ -73,30 +74,13 @@ impl DICOMWebClientSurf {
 }
 
 pub struct QueryBuilderSurf {
-    query: Query,
+    query: HashMap<String,String>,
     request_builder: surf::RequestBuilder,
 }
 
-#[derive(Serialize, Deserialize, Default)]
-struct Query {
-    PatientName: Option<String>,
-    limit: Option<u32>,
-    offset: Option<u32>,
-}
-
 impl DICOMQueryBuilder for QueryBuilderSurf {
-    fn patient_name(mut self, name_query: &str) -> Self {
-        self.query.PatientName = Some(name_query.to_string());
-        self
-    }
-
-    fn limit(mut self, limit: u32) -> Self {
-        self.query.limit = Some(limit);
-        self
-    }
-
-    fn offset(mut self, offset: u32) -> Self {
-        self.query.offset = Some(offset);
+    fn query(mut self, key: &str, value: &str) -> Self {
+        self.query.insert(key.to_string(), value.to_string());
         self
     }
 }
@@ -108,7 +92,7 @@ impl QueryBuilderSurf {
         println!("content-type: {}", content_type);
 
         if !content_type.as_str().starts_with("application/dicom+json") {
-            return Err(Error::DICOMWeb(
+            return Err(Error::DICOMweb(
                 "invalid content type, should be application/dicom+json".to_string(),
             ));
         }

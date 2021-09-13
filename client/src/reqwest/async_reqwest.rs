@@ -12,10 +12,10 @@ use serde::de::DeserializeOwned;
 use serde::Serialize;
 use serde_json::Value;
 
-use super::{DICOMWebClientReqwest, QueryBuilderReqwest, RequestBuilderTrait};
+use super::{DICOMwebClientReqwest, QueryBuilderReqwest, RequestBuilderTrait};
 use super::{ReqwestClient, ReqwestClientBuilder};
 
-pub type DICOMWebClientAsync = DICOMWebClientReqwest<reqwest::Client, reqwest::ClientBuilder>;
+pub type DICOMwebClientAsync = DICOMwebClientReqwest<reqwest::Client, reqwest::ClientBuilder>;
 
 pub type QueryBuilderAsync = QueryBuilderReqwest<reqwest::RequestBuilder>;
 
@@ -69,7 +69,7 @@ impl QueryBuilderAsync {
         println!("content-type: {}", content_type);
 
         if !content_type.starts_with("application/dicom+json") {
-            return Err(Error::DICOMWeb(
+            return Err(Error::DICOMweb(
                 "invalid content type, should be application/dicom+json".to_string(),
             ));
         }

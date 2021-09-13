@@ -1,4 +1,5 @@
 use dicom::object::InMemDicomObject;
+use log::info;
 use thiserror::Error;
 
 pub use dicomweb_util::DICOMJson;
@@ -24,30 +25,32 @@ pub enum Error {
     #[error("{0}")]
     Http(#[from] http::header::ToStrError),
     #[error("{0}")]
-    DICOMWeb(String),
+    DICOMweb(String),
 }
 pub type Result<T> = std::result::Result<T, Error>;
 
-pub trait DICOMWebClient {
+pub trait DICOMwebClient {
     type QueryBuilder: DICOMQueryBuilder;
 
     fn default_headers(self, key: &'static str, value: &str) -> Self;
 
-    fn find_studies(&mut self) -> Self::QueryBuilder {
+    fn search_studies(&mut self) -> Self::QueryBuilder {
         let url = format!("{}/studies", self.get_qido_prefix());
+        info!("get url {}", &url);
         self.get_url(&url)
     }
 
-    fn find_series(&mut self, study_instance_uid: &str) -> Self::QueryBuilder {
+    fn search_series(&mut self, study_instance_uid: &str) -> Self::QueryBuilder {
         let url = format!(
             "{}/studies/{}/series",
             self.get_qido_prefix(),
             study_instance_uid
         );
+        info!("get url {}", &url);
         self.get_url(&url)
     }
 
-    fn find_instances(
+    fn search_instances(
         &mut self,
         study_instance_uid: &str,
         series_instance_uid: &str,
@@ -58,10 +61,24 @@ pub trait DICOMWebClient {
             study_instance_uid,
             series_instance_uid,
         );
+        info!("get url {}", &url);
         self.get_url(&url)
     }
 
-    fn get_instance(
+    fn retrieve_study(&mut self,
+        study_instance_uid: &str,) -> Self::QueryBuilder {
+        todo!()
+    }
+
+    fn retrieve_series(
+        &mut self,
+        study_instance_uid: &str,
+        series_instance_uid: &str,
+    ) -> Self::QueryBuilder {
+        todo!()
+    }
+
+    fn retrieve_instance(
         &mut self,
         study_instance_uid: &str,
         series_instance_uid: &str,
@@ -74,7 +91,12 @@ pub trait DICOMWebClient {
             series_instance_uid,
             sop_instance_uid,
         );
+        info!("get url {}", &url);
         self.get_url(&url)
+    }
+
+    fn store_instances(&mut self) -> Self::QueryBuilder {
+        todo!();
     }
 
     fn get_url(&mut self, url: &str) -> Self::QueryBuilder;
@@ -83,9 +105,22 @@ pub trait DICOMWebClient {
 }
 
 pub trait DICOMQueryBuilder {
-    fn patient_name(self, name_query: &str) -> Self;
-    fn limit(self, limit: u32) -> Self;
-    fn offset(self, offset: u32) -> Self;
+    fn query(self, key: &str, value: &str) -> Self;
+
+    fn patient_name(self, name_query: &str) -> Self
+    where Self:Sized {
+        self.query("PatientName", name_query)
+    }
+
+    fn limit(self, limit: u32) -> Self
+    where Self:Sized  {
+        self.query("limit", limit.to_string().as_str())
+    }
+
+    fn offset(self, offset: u32) -> Self
+    where Self:Sized  {
+        self.query("offset", offset.to_string().as_str())
+    }
 }
 
 #[cfg(test)]
