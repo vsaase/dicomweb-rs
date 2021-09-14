@@ -1,9 +1,10 @@
 use async_std::io;
 use async_std::path::Path;
 use dicom::object::open_file;
-use dicom::object::DefaultDicomObject;
+use dicom::object::{DefaultDicomObject, InMemDicomObject};
 use log::info;
 use async_trait::async_trait;
+use serde_json::json;
 
 
 pub struct DICOMwebServer<T> {
@@ -13,22 +14,18 @@ pub struct DICOMwebServer<T> {
 impl<T> DICOMwebServer<T>
 where T: DICOMServer + Clone + Send + Sync + 'static{
     pub fn with_dicom_server(server: T) -> Self{
-        let app = tide::with_state(server);
-        DICOMwebServer{app}
-    }
-
-    fn init_app(&mut self) {
-        let server = self.app.state();
-        self.app.at(&("/".to_string()
-            + &server.get_qido_prefix()
-            + if !server.get_qido_prefix().is_empty() { "/" } else { "" }
+        let mut app = tide::with_state(server);
+        app.at(&("/".to_string()
+            + &app.state().get_qido_prefix()
+            + if !app.state().get_qido_prefix().is_empty() { "/" } else { "" }
             + "studies")).get(Self::find_studies);
+        DICOMwebServer{app}
     }
 
     async fn find_studies(mut req: tide::Request<T>) -> tide::Result {
         let server = req.state();
-        let dicoms = server.find_studies();
-        Ok("".into())
+        let dicoms = server.find_studies().await;
+        Ok(json!([{"0020000D":{"vr":"UI","Value":[dicoms[0].element_by_name("StudyInstanceUID")?.to_str()?.trim_matches(|c: char| c == '\x00')]}}]).into())
     }
 
     pub async fn listen(self, listener: &str) -> io::Result<()> {
@@ -43,7 +40,7 @@ pub trait DICOMServer {
 
     fn get_qido_prefix(&self) -> &str;
 
-    async fn find_studies(&self) -> Vec<DefaultDicomObject>;
+    async fn find_studies(&self) -> Vec<InMemDicomObject>;
 }
 
 #[cfg(test)]

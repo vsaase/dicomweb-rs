@@ -3,7 +3,7 @@ use dicomweb_server::{DICOMServer, DICOMwebServer};
 use log::info;
 use walkdir::WalkDir;
 use async_trait::async_trait;
-use dicom::object::{DefaultDicomObject, open_file};
+use dicom::{core::DataElement, object::{DefaultDicomObject,InMemDicomObject, open_file}};
 
 
 #[derive(Clone, Default)]
@@ -44,13 +44,19 @@ impl Server {
 impl DICOMServer for Server {
     type State = Server;
 
-
     fn get_qido_prefix(&self) -> &str {
         &self.qido_url_prefix
     }
 
-    async fn find_studies(&self) -> Vec<DefaultDicomObject>{
-        todo!()
+    async fn find_studies(&self) -> Vec<InMemDicomObject>{
+        let mut obj = InMemDicomObject::create_empty();
+        if self.dicoms.len() > 0 {
+            let elt = self.dicoms[0].element_by_name("StudyInstanceUID").unwrap();
+            obj.put(elt.to_owned());
+            vec![obj]
+        } else {
+            vec![]
+        }
     }
 
 }
@@ -58,8 +64,8 @@ impl DICOMServer for Server {
 
 #[async_std::main]
 async fn main() -> tide::Result<()> {
-    let server = Server::from_dir(Path::new("/Users/vsaase/Desktop/Saase_Armin"));
-    let address = "127.0.0.1:8080";
+    let server = Server::from_dir(Path::new("/home/vsaase/Desktop/Saase_Armin"));
+    let address = "127.0.0.1:8081";
     println!("listening on {}", address);
     let web_server = DICOMwebServer::with_dicom_server(server);
     web_server.listen(address).await?;
