@@ -1,9 +1,9 @@
 use std::io::Cursor;
 
 use bytes::Buf;
-use dicomweb_client::async_surf::DICOMwebClientSurf;
+use dicomweb_client::async_surf::Client;
 
-use dicomweb_client::reqwest::async_reqwest::DICOMwebClientAsync;
+// use dicomweb_client::reqwest::async_reqwest::Client;
 use dicomweb_client::{DICOMJson, DICOMQueryBuilder, DICOMwebClient, Result};
 use log::{debug, error, info, log_enabled, trace, warn, Level};
 use serde_json::Value;
@@ -20,7 +20,7 @@ async fn main() -> Result<()> {
     info!("creating client");
     // let mut client = DICOMwebClientAsync::new(url)
     //     .default_headers("apikey", "9c8a1e06-9b19-4e36-81ff-3ece53bdb674");
-    let mut client = DICOMwebClientSurf::new(url)
+    let mut client = Client::new(url)
         .default_headers("apikey", "9c8a1e06-9b19-4e36-81ff-3ece53bdb674");
     info!("querying studies");
 

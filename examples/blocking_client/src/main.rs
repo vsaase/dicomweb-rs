@@ -3,7 +3,7 @@ use std::io::Cursor;
 use bytes::Buf;
 use dicomweb_client::Result;
 use dicomweb_client::{
-    reqwest::blocking_reqwest::DICOMwebClientBlocking, DICOMQueryBuilder, DICOMwebClient,
+    reqwest::blocking_reqwest::Client, DICOMQueryBuilder, DICOMwebClient,
 };
 use dicomweb_util::{
     dicom_from_reader, json2dicom, parse_multipart_body, DICOMJson, DICOMJsonTagValue,
@@ -20,7 +20,7 @@ fn main() -> Result<()> {
     // let url = "http://localhost:8080/dcm4chee-arc/aets/DCM4CHEE/rs";
     // let client = DICOMwebClient::new(url);
     info!("creating client");
-    let mut client = DICOMwebClientBlocking::new(url)
+    let mut client = Client::new(url)
         .default_headers("apikey", "9c8a1e06-9b19-4e36-81ff-3ece53bdb674");
     info!("querying studies");
 

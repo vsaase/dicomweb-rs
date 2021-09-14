@@ -18,7 +18,7 @@ impl From<surf::Error> for crate::Error {
 }
 
 #[derive(Default, Debug)]
-pub struct DICOMwebClientSurf {
+pub struct Client {
     client: surf::Client,
     config: surf::Config,
     url: Option<Url>,
@@ -28,8 +28,8 @@ pub struct DICOMwebClientSurf {
     ups_url_prefix: String,
 }
 
-impl DICOMwebClient for DICOMwebClientSurf {
-    type QueryBuilder = QueryBuilderSurf;
+impl DICOMwebClient for Client {
+    type QueryBuilder = QueryBuilder;
 
     fn default_headers(mut self, key: &'static str, value: &str) -> Self {
         self.config = self.config.add_header(key, value).unwrap();
@@ -40,7 +40,7 @@ impl DICOMwebClient for DICOMwebClientSurf {
         let mut newurl = self.url.clone().unwrap();
         let path = format!("{}{}", newurl.path(), url);
         newurl.set_path(&path.as_str());
-        QueryBuilderSurf {
+        QueryBuilder {
             request_builder: self.client.get(newurl),
             query: Default::default(),
         }
@@ -54,7 +54,7 @@ impl DICOMwebClient for DICOMwebClientSurf {
     }
 }
 
-impl DICOMwebClientSurf {
+impl Client {
     pub fn new(url: &str) -> Self {
         let config = surf::Config::new();
         let client = surf::Client::new();
@@ -73,19 +73,19 @@ impl DICOMwebClientSurf {
     // }
 }
 
-pub struct QueryBuilderSurf {
+pub struct QueryBuilder {
     query: HashMap<String,String>,
     request_builder: surf::RequestBuilder,
 }
 
-impl DICOMQueryBuilder for QueryBuilderSurf {
+impl DICOMQueryBuilder for QueryBuilder {
     fn query(mut self, key: &str, value: &str) -> Self {
         self.query.insert(key.to_string(), value.to_string());
         self
     }
 }
 
-impl QueryBuilderSurf {
+impl QueryBuilder {
     pub async fn results(self) -> Result<Vec<InMemDicomObject>> {
         let mut res = self.request_builder.query(&self.query)?.send().await?;
         let content_type = res.header("content-type").unwrap().get(0).unwrap();

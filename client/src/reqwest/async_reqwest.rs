@@ -15,9 +15,9 @@ use serde_json::Value;
 use super::{DICOMwebClientReqwest, QueryBuilderReqwest, RequestBuilderTrait};
 use super::{ReqwestClient, ReqwestClientBuilder};
 
-pub type DICOMwebClientAsync = DICOMwebClientReqwest<reqwest::Client, reqwest::ClientBuilder>;
+pub type Client = DICOMwebClientReqwest<reqwest::Client, reqwest::ClientBuilder>;
 
-pub type QueryBuilderAsync = QueryBuilderReqwest<reqwest::RequestBuilder>;
+pub type QueryBuilder = QueryBuilderReqwest<reqwest::RequestBuilder>;
 
 impl ReqwestClientBuilder for reqwest::ClientBuilder {
     type Client = reqwest::Client;
@@ -62,7 +62,7 @@ impl RequestBuilderTrait for reqwest::RequestBuilder {
     }
 }
 
-impl QueryBuilderAsync {
+impl QueryBuilder {
     pub async fn results(self) -> Result<Vec<InMemDicomObject>> {
         let res = self.send().await?;
         let content_type = res.headers()["content-type"].to_str()?;
