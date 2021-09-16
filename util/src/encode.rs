@@ -25,7 +25,10 @@ pub fn encode_dicom_to_json(dicom: InMemDicomObject) -> BTreeMap<String, HashMap
                     FD => {
                         json!([elt.value().to_float64().unwrap()])
                     }
-                    OB | OD | OF | OL | OV | OW | UN => elt.value().to_bytes().unwrap().map(|b| ),
+                    OB | OD | OF | OL | OV | OW | UN => {
+                        let bytes = elt.value().to_bytes().unwrap();
+                        json!(base64::encode(bytes))
+                    }
                     PN => {
                         json!([{ "Alphabetic": elt.value().to_clean_str().unwrap() }])
                     }

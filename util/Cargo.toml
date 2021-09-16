@@ -1,17 +1,18 @@
 [package]
-name = "dicomweb-util"
-version = "0.1.0"
 authors = ["Victor Saase <vsaase@gmail.com>"]
 edition = "2018"
+name = "dicomweb-util"
+version = "0.1.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+base64 = "0.13.0"
 bytes = "1.0.1"
-log = "0.4"
 dicom = "0.4"
 dicom-object = "0.4"
-serde_json = "1"
-serde = { version = "1.0", features = ["derive"] }
 enum-as-inner = "0.3.3"
+log = "0.4"
+serde = {version = "1.0", features = ["derive"]}
+serde_json = "1"
 thiserror = "1.0.29"
