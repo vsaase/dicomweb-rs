@@ -1,10 +1,15 @@
+use std::ops::Deref;
+
 use async_std::path::Path;
-use dicomweb_server::{DICOMServer, DICOMwebServer};
+use async_trait::async_trait;
+use dicom::{
+    core::DataElement,
+    object::{mem::InMemElement, open_file, DefaultDicomObject, DicomObject, InMemDicomObject},
+};
+use dicomweb_server::{DICOMServer, DICOMwebServer, STUDYTAGS};
+use itertools::Itertools;
 use log::info;
 use walkdir::WalkDir;
-use async_trait::async_trait;
-use dicom::{core::DataElement, object::{DefaultDicomObject,InMemDicomObject, open_file}};
-
 
 #[derive(Clone, Default)]
 struct Server {
@@ -37,7 +42,6 @@ impl Server {
         // .for_each(|x| println!("{}", x.path().display()));
         Server::with_dicoms(dicoms)
     }
-
 }
 
 #[async_trait]
@@ -48,19 +52,27 @@ impl DICOMServer for Server {
         &self.qido_url_prefix
     }
 
-    async fn find_studies(&self) -> Vec<InMemDicomObject>{
-        let mut obj = InMemDicomObject::create_empty();
-        if self.dicoms.len() > 0 {
-            let elt = self.dicoms[0].element_by_name("StudyInstanceUID").unwrap();
-            obj.put(elt.to_owned());
-            vec![obj]
-        } else {
-            vec![]
-        }
+    async fn find_studies(&self) -> Vec<InMemDicomObject> {
+        self.dicoms
+            .iter()
+            .unique_by(|d| {
+                d.element_by_name("StudyInstanceUID")
+                    .unwrap()
+                    .to_str()
+                    .unwrap()
+            })
+            .map(|d| {
+                InMemDicomObject::from_element_iter(
+                    d.clone()
+                        .into_inner()
+                        .into_iter()
+                        .filter(|elt| STUDYTAGS.contains(&elt.header().tag))
+                        .map(|elt| elt.clone()),
+                )
+            })
+            .collect()
     }
-
 }
-
 
 #[async_std::main]
 async fn main() -> tide::Result<()> {

@@ -31,6 +31,7 @@ pub enum Error {
 pub type Result<T> = std::result::Result<T, Error>;
 
 pub mod decode;
+pub mod encode;
 
 #[derive(Debug)]
 enum MultipartParserStates {
@@ -74,7 +75,9 @@ pub fn parse_multipart_body(body: Bytes, boundary: &str) -> Result<Vec<Vec<u8>>>
                         }
                     }
                     _ => {
-                        return Err(Error::Custom("in wrong state when reading multipart header".to_string()));
+                        return Err(Error::Custom(
+                            "in wrong state when reading multipart header".to_string(),
+                        ));
                     }
                 }
 
