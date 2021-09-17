@@ -10,8 +10,8 @@ dicomweb-server = { path = "../../server" }
 tide = "0.16.0"
 async-std = { version = "1.8.0", features = ["attributes"] }
 log = "0.4"
-env_logger = "0.8.3"
+env_logger = "0.9.0"
 walkdir = "2.3.2"
 async-trait = "0.1.51"
-dicom = "0.4.0"
+dicom = { git = "https://github.com/Enet4/dicom-rs" }
 itertools = "0.10.1"

@@ -116,12 +116,8 @@ pub fn dicom_from_reader<R: Read>(mut file: R) -> Result<DefaultDicomObject> {
         // skip the preamble
         file.read_exact(&mut buf)?;
     }
-    let result = DefaultDicomObject::from_reader(file);
-    if let Ok(ds) = result {
-        Ok(ds)
-    } else {
-        Err(Error::Custom(String::from("error reading dicom")).into())
-    }
+    let result = DefaultDicomObject::from_reader(file)?;
+    Ok(result)
 }
 
 #[derive(Debug, Deserialize, EnumAsInner)]

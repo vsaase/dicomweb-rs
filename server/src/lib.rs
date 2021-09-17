@@ -1,15 +1,17 @@
 use std::collections::{BTreeMap, HashMap};
+// use std::fmt::Write;
+use std::io::Write;
 
-use async_std::io;
 use async_std::path::Path;
 use async_trait::async_trait;
 use dicom::core::header::Header;
 use dicom::core::Tag;
 use dicom::object::open_file;
 use dicom::object::{DefaultDicomObject, InMemDicomObject};
-use dicomweb_util::encode::encode_dicom_to_json;
+use dicomweb_util::encode::{encode_dicom_to_json, DICOMJsonObject};
 use log::info;
 use serde_json::{json, Value};
+use std::io::{self, BufWriter, Cursor};
 use tide::log::debug;
 use tide::Response;
 
@@ -53,6 +55,8 @@ where
 {
     pub fn with_dicom_server(server: T) -> Self {
         let mut app = tide::with_state(server);
+
+        app.with(tide::log::LogMiddleware::new());
         let qido = app.state().get_qido_prefix().to_string()
             + if !app.state().get_qido_prefix().is_empty() {
                 "/"
@@ -89,8 +93,7 @@ where
         let server = req.state();
         let dicoms = server.search_studies().await;
 
-        let res: Vec<BTreeMap<String, HashMap<String, Value>>> =
-            dicoms.into_iter().map(encode_dicom_to_json).collect();
+        let res: Vec<DICOMJsonObject> = dicoms.into_iter().map(encode_dicom_to_json).collect();
 
         let mut res = Response::from(json!(res));
         res.set_content_type("application/dicom+json");
@@ -102,8 +105,7 @@ where
         let study_instance_uid = req.param("study_instance_uid")?;
         let dicoms = server.search_series(study_instance_uid).await;
 
-        let res: Vec<BTreeMap<String, HashMap<String, Value>>> =
-            dicoms.into_iter().map(encode_dicom_to_json).collect();
+        let res: Vec<DICOMJsonObject> = dicoms.into_iter().map(encode_dicom_to_json).collect();
 
         let mut res = Response::from(json!(res));
         res.set_content_type("application/dicom+json");
@@ -118,8 +120,7 @@ where
             .search_instances(study_instance_uid, series_instance_uid)
             .await;
 
-        let res: Vec<BTreeMap<String, HashMap<String, Value>>> =
-            dicoms.into_iter().map(encode_dicom_to_json).collect();
+        let res: Vec<DICOMJsonObject> = dicoms.into_iter().map(encode_dicom_to_json).collect();
 
         let mut res = Response::from(json!(res));
         res.set_content_type("application/dicom+json");
@@ -135,9 +136,47 @@ where
             .retrieve_instance(study_instance_uid, series_instance_uid, sop_instance_uid)
             .await;
 
-        let mut res = Response::new(200);
-        res.set_content_type("multipart/related");
-        Ok(res)
+        if let Some(obj) = dicom {
+            let mut res = Response::new(200);
+            let boundary = "ab69a3d5-542c-49e1-884b-8e135e104893";
+            res.set_content_type(
+                format!(
+                    "multipart/related; type=\"application/dicom\"; boundary={}",
+                    boundary
+                )
+                .as_str(),
+            );
+
+            let mut body_payload = Cursor::new(Vec::with_capacity(1024 * 1024));
+            obj.write_all(&mut body_payload).unwrap();
+
+            let mut body_header = Cursor::new(Vec::with_capacity(4 * 80));
+            write!(body_header, "--{}\r\n", boundary).unwrap();
+            write!(
+                body_header,
+                "Content-Type: multipart/related; type=\"application/dicom;\"\r\n"
+            )
+            .unwrap();
+            write!(
+                body_header,
+                "Content-Length: {}\r\n",
+                body_payload.position()
+            )
+            .unwrap();
+            write!(body_header, "\r\n").unwrap();
+
+            write!(body_payload, "\r\n--{}--", boundary).unwrap();
+
+            let mut body = body_header.into_inner();
+            let payload_vec = body_payload.into_inner();
+            body.extend(payload_vec);
+
+            res.set_body(body);
+            Ok(res)
+        } else {
+            let mut res = Response::new(404);
+            Ok(res)
+        }
     }
 
     pub async fn listen(self, listener: &str) -> io::Result<()> {
@@ -166,7 +205,7 @@ pub trait DICOMServer {
         study_instance_uid: &str,
         series_instance_uid: &str,
         sop_instance_uid: &str,
-    ) -> Option<InMemDicomObject>;
+    ) -> Option<DefaultDicomObject>;
 }
 
 #[cfg(test)]

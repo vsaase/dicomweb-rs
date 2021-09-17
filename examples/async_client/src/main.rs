@@ -14,11 +14,11 @@ async fn main() -> Result<()> {
 
     // let url = "http://localhost:8088/rs";
     // let url = "http://localhost:8042/dicom-web";
-    let url = "http://localhost:8080/dcm4chee-arc/aets/DCM4CHEE/rs";
+    // let url = "http://localhost:8080/dcm4chee-arc/aets/DCM4CHEE/rs";
+    let url = "http://localhost:8081";
     // let client = DICOMwebClient::new(url);
     info!("creating client");
-    // let mut client = DICOMwebClientAsync::new(url)
-    //     .default_headers("apikey", "9c8a1e06-9b19-4e36-81ff-3ece53bdb674");
+    // let mut client = DICOMwebClientAsync::new(url);
     let mut client = Client::new(url);
     info!("querying studies");
 

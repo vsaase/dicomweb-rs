@@ -1,11 +1,13 @@
 use std::collections::{BTreeMap, HashMap};
 
 use dicom::core::VR::*;
-use dicom_object::InMemDicomObject;
+use dicom::object::InMemDicomObject;
 use serde_json::{json, Value};
 
+pub type DICOMJsonObject = BTreeMap<String, HashMap<String, Value>>;
+
 // http://dicom.nema.org/medical/dicom/current/output/chtml/part18/sect_F.2.3.html#table_F.2.3-1
-pub fn encode_dicom_to_json(dicom: InMemDicomObject) -> BTreeMap<String, HashMap<String, Value>> {
+pub fn encode_dicom_to_json(dicom: InMemDicomObject) -> DICOMJsonObject {
     dicom
         .into_iter()
         .map(|elt| {
@@ -37,7 +39,7 @@ pub fn encode_dicom_to_json(dicom: InMemDicomObject) -> BTreeMap<String, HashMap
                     }
                     SQ => match elt.value() {
                         dicom::core::DicomValue::Sequence { items, size } => {
-                            let v: Vec<BTreeMap<String, HashMap<String, Value>>> = items
+                            let v: Vec<DICOMJsonObject> = items
                                 .into_iter()
                                 .map(|i| encode_dicom_to_json(i.clone()))
                                 .collect();

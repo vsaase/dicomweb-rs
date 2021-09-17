@@ -2,6 +2,7 @@ use crate::{DICOMQueryBuilder, Error, Result};
 use bytes::{Buf, Bytes};
 use dicom::object::{DefaultDicomObject, InMemDicomObject};
 use dicomweb_util::{dicom_from_reader, json2dicom, parse_multipart_body};
+use log::debug;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -38,7 +39,11 @@ impl DICOMwebClient for Client {
 
     fn get_url(&mut self, url: &str) -> Self::QueryBuilder {
         let mut newurl = self.url.clone().unwrap();
-        let path = format!("{}{}", newurl.path(), url);
+        let mut basepath = newurl.path();
+        if basepath == "/" {
+            basepath = "";
+        }
+        let path = format!("{}{}", basepath, url);
         newurl.set_path(&path.as_str());
         QueryBuilder {
             request_builder: self.client.get(newurl),
@@ -74,7 +79,7 @@ impl Client {
 }
 
 pub struct QueryBuilder {
-    query: HashMap<String,String>,
+    query: HashMap<String, String>,
     request_builder: surf::RequestBuilder,
 }
 
@@ -87,14 +92,20 @@ impl DICOMQueryBuilder for QueryBuilder {
 
 impl QueryBuilder {
     pub async fn results(self) -> Result<Vec<InMemDicomObject>> {
-        let mut res = self.request_builder.query(&self.query)?.send().await?;
+        let req = self.request_builder.query(&self.query)?;
+        debug!("req: {:?}", req);
+        let mut res = req.send().await?;
         let content_type = res.header("content-type").unwrap().get(0).unwrap();
         println!("content-type: {}", content_type);
 
         if !content_type.as_str().starts_with("application/dicom+json") {
-            return Err(Error::DICOMweb(
-                "invalid content type, should be application/dicom+json".to_string(),
-            ));
+            panic!(
+                "invalid content type, should be application/dicom+json,  response: {:?}",
+                res
+            )
+            // return Err(Error::DICOMweb(
+            //     "invalid content type, should be application/dicom+json".to_string(),
+            // ));
         }
 
         let json: Vec<Value> = res.body_json().await?;
