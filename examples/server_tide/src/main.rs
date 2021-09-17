@@ -6,7 +6,7 @@ use dicom::{
     core::DataElement,
     object::{mem::InMemElement, open_file, DefaultDicomObject, DicomObject, InMemDicomObject},
 };
-use dicomweb_server::{DICOMServer, DICOMwebServer, STUDYTAGS};
+use dicomweb_server::{DICOMServer, DICOMwebServer, INSTANCETAGS, SERIESTAGS, STUDYTAGS};
 use itertools::Itertools;
 use log::info;
 use walkdir::WalkDir;
@@ -51,8 +51,11 @@ impl DICOMServer for Server {
     fn get_qido_prefix(&self) -> &str {
         &self.qido_url_prefix
     }
+    fn get_wado_prefix(&self) -> &str {
+        &self.wado_url_prefix
+    }
 
-    async fn find_studies(&self) -> Vec<InMemDicomObject> {
+    async fn search_studies(&self) -> Vec<InMemDicomObject> {
         self.dicoms
             .iter()
             .unique_by(|d| {
@@ -71,6 +74,93 @@ impl DICOMServer for Server {
                 )
             })
             .collect()
+    }
+
+    async fn search_series(&self, study_instance_uid: &str) -> Vec<InMemDicomObject> {
+        self.dicoms
+            .iter()
+            .filter(|d| {
+                d.element_by_name("StudyInstanceUID")
+                    .unwrap()
+                    .to_clean_str()
+                    .unwrap()
+                    == study_instance_uid
+            })
+            .unique_by(|d| {
+                d.element_by_name("SeriesInstanceUID")
+                    .unwrap()
+                    .to_str()
+                    .unwrap()
+            })
+            .map(|d| {
+                InMemDicomObject::from_element_iter(
+                    d.clone()
+                        .into_inner()
+                        .into_iter()
+                        .filter(|elt| {
+                            STUDYTAGS.contains(&elt.header().tag)
+                                || SERIESTAGS.contains(&elt.header().tag)
+                        })
+                        .map(|elt| elt.clone()),
+                )
+            })
+            .collect()
+    }
+
+    async fn search_instances(
+        &self,
+        study_instance_uid: &str,
+        series_instance_uid: &str,
+    ) -> Vec<InMemDicomObject> {
+        self.dicoms
+            .iter()
+            .filter(|d| {
+                d.element_by_name("StudyInstanceUID")
+                    .unwrap()
+                    .to_clean_str()
+                    .unwrap()
+                    == study_instance_uid
+            })
+            .filter(|d| {
+                d.element_by_name("SeriesInstanceUID")
+                    .unwrap()
+                    .to_clean_str()
+                    .unwrap()
+                    == series_instance_uid
+            })
+            .map(|d| {
+                InMemDicomObject::from_element_iter(
+                    d.clone()
+                        .into_inner()
+                        .into_iter()
+                        .filter(|elt| {
+                            STUDYTAGS.contains(&elt.header().tag)
+                                || SERIESTAGS.contains(&elt.header().tag)
+                                || INSTANCETAGS.contains(&elt.header().tag)
+                        })
+                        .map(|elt| elt.clone()),
+                )
+            })
+            .collect()
+    }
+
+    async fn retrieve_instance(
+        &self,
+        study_instance_uid: &str,
+        series_instance_uid: &str,
+        sop_instance_uid: &str,
+    ) -> Option<InMemDicomObject> {
+        self.dicoms
+            .iter()
+            .filter(|d| {
+                d.element_by_name("SOPInstanceUID")
+                    .unwrap()
+                    .to_clean_str()
+                    .unwrap()
+                    == sop_instance_uid
+            })
+            .next()
+            .map(|d| d.clone().into_inner())
     }
 }
 

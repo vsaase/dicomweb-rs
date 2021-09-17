@@ -68,7 +68,13 @@ impl RequestBuilderTrait for reqwest::blocking::RequestBuilder {
 impl QueryBuilder {
     pub fn results(self) -> Result<Vec<InMemDicomObject>> {
         let res = self.send()?;
-        let content_type = res.headers()["content-type"].to_str()?;
+        let content_type = res
+            .headers()
+            .get("content-type")
+            .ok_or(Error::DICOMweb(
+                "no content type on response, should be application/dicom+json".to_string(),
+            ))?
+            .to_str()?;
         println!("content-type: {}", content_type);
 
         if !content_type.starts_with("application/dicom+json") {
@@ -83,7 +89,13 @@ impl QueryBuilder {
 
     pub fn dicoms(self) -> Result<Vec<DefaultDicomObject>> {
         let res = self.send()?;
-        let content_type = res.headers()["content-type"].to_str()?;
+        let content_type = res
+            .headers()
+            .get("content-type")
+            .ok_or(Error::DICOMweb(
+                "no content type on response, should be multipart/related".to_string(),
+            ))?
+            .to_str()?;
         println!("content-type: {}", content_type);
         if !content_type.starts_with("multipart/related") {
             return Err(Error::DICOMweb(

@@ -13,15 +13,13 @@ async fn main() -> Result<()> {
     env_logger::init();
 
     // let url = "http://localhost:8088/rs";
-    // let url = "http://hackathon.siim.org/dicomweb";
     // let url = "http://localhost:8042/dicom-web";
     let url = "http://localhost:8080/dcm4chee-arc/aets/DCM4CHEE/rs";
     // let client = DICOMwebClient::new(url);
     info!("creating client");
     // let mut client = DICOMwebClientAsync::new(url)
     //     .default_headers("apikey", "9c8a1e06-9b19-4e36-81ff-3ece53bdb674");
-    let mut client = Client::new(url)
-        .default_headers("apikey", "9c8a1e06-9b19-4e36-81ff-3ece53bdb674");
+    let mut client = Client::new(url);
     info!("querying studies");
 
     let results = client
