@@ -8,7 +8,7 @@ use serde_json::Value;
 use std::i64;
 
 /// this function is adapted from a pull request https://github.com/Enet4/dicom-rs/pull/174
-/// thanks to charbeljc
+/// thanks to https://github.com/charbeljc
 pub fn decode_response_item(item: &Value) -> DicomResponse {
     let mut obj = InMemDicomObject::create_empty();
     match item {
@@ -123,17 +123,22 @@ pub fn decode_response_item(item: &Value) -> DicomResponse {
                         }
                         VR::IS => match value {
                             Value::Array(_) => {
-                                let v: Result<Vec<i16>, serde_json::Error> = serde_json::from_value(value.to_owned());
+                                let v: Result<Vec<i16>, serde_json::Error> =
+                                    serde_json::from_value(value.to_owned());
                                 if let Ok(v) = v {
                                     let vv = &v[0];
-                                    let elt =
-                                        DataElement::new(tag, vr, dicom_value!(Str, vv.to_string()));
+                                    let elt = DataElement::new(
+                                        tag,
+                                        vr,
+                                        dicom_value!(Str, vv.to_string()),
+                                    );
                                     obj.put(elt);
-                                } else { // DCM4CHEE encodes IS as JSON strings
-                                    let v: Vec<String> = serde_json::from_value(value.to_owned()).unwrap();
+                                } else {
+                                    // DCM4CHEE encodes IS as JSON strings
+                                    let v: Vec<String> =
+                                        serde_json::from_value(value.to_owned()).unwrap();
                                     let vv = &v[0];
-                                    let elt =
-                                        DataElement::new(tag, vr, dicom_value!(Str, vv));
+                                    let elt = DataElement::new(tag, vr, dicom_value!(Str, vv));
                                     obj.put(elt);
                                 }
                             }
