@@ -8,7 +8,6 @@ name = "dicomweb-client"
 readme = "README.md"
 repository = "https://github.com/vsaase/dicomweb-rs"
 version = "0.1.0"
-version = "0.1.0"
 
 [dependencies]
 bytes = "1"
