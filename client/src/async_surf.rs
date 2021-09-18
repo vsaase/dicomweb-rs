@@ -88,6 +88,11 @@ impl DICOMQueryBuilder for QueryBuilder {
         self.query.insert(key.to_string(), value.to_string());
         self
     }
+
+    fn header(mut self, key: &str, value: &str) -> Self {
+        self.request_builder = self.request_builder.header(key, value);
+        self
+    }
 }
 
 impl QueryBuilder {

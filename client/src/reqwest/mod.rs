@@ -168,9 +168,12 @@ pub trait RequestBuilderTrait {
 
 impl<T: RequestBuilderTrait> DICOMQueryBuilder for QueryBuilderReqwest<T> {
     fn query(mut self, key: &str, value: &str) -> Self {
-        self.request_builder = self
-            .request_builder
-            .query(&[(key, value)]);
+        self.request_builder = self.request_builder.query(&[(key, value)]);
+        self
+    }
+
+    fn header(mut self, key: &str, value: &str) -> Self {
+        self.request_builder = self.request_builder.header(key, value);
         self
     }
 }
