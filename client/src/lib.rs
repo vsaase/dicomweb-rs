@@ -37,7 +37,8 @@ pub trait DICOMwebClient {
     fn search_studies(&mut self) -> Self::QueryBuilder {
         let url = format!("{}/studies", self.get_qido_prefix());
         info!("get url {}", &url);
-        self.get_url(&url).header("Accept", "application/json")
+        self.get_url(&url)
+            .header("Accept", "application/dicom+json")
     }
 
     fn search_series(&mut self, study_instance_uid: &str) -> Self::QueryBuilder {
@@ -47,7 +48,8 @@ pub trait DICOMwebClient {
             study_instance_uid
         );
         info!("get url {}", &url);
-        self.get_url(&url).header("Accept", "application/json")
+        self.get_url(&url)
+            .header("Accept", "application/dicom+json")
     }
 
     fn search_instances(
@@ -62,7 +64,8 @@ pub trait DICOMwebClient {
             series_instance_uid,
         );
         info!("get url {}", &url);
-        self.get_url(&url).header("Accept", "application/json")
+        self.get_url(&url)
+            .header("Accept", "application/dicom+json")
     }
 
     fn retrieve_study(&mut self, study_instance_uid: &str) -> Self::QueryBuilder {

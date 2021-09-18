@@ -154,7 +154,8 @@ where
             write!(body_header, "--{}\r\n", boundary).unwrap();
             write!(
                 body_header,
-                "Content-Type: multipart/related; type=\"application/dicom;\"\r\n"
+                "Content-Type: multipart/related; type=\"application/dicom\"; boundary={}\r\n",
+                boundary
             )
             .unwrap();
             write!(
