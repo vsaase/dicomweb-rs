@@ -4,6 +4,7 @@ use async_trait::async_trait;
 use dicom::core::Tag;
 use dicom::object::{DefaultDicomObject, InMemDicomObject};
 use dicomweb_util::encode::{encode_dicom_to_json, DICOMJsonObject};
+use dicomweb_util::multipart_encode;
 use serde_json::json;
 use std::io::{self, Cursor};
 use tide::Response;
@@ -140,30 +141,7 @@ where
                 .as_str(),
             );
 
-            let mut body_payload = Cursor::new(Vec::with_capacity(1024 * 1024));
-            obj.write_all(&mut body_payload).unwrap();
-
-            let mut body_header = Cursor::new(Vec::with_capacity(4 * 80));
-            write!(body_header, "--{}\r\n", boundary).unwrap();
-            write!(
-                body_header,
-                "Content-Type: multipart/related; type=\"application/dicom\"; boundary={}\r\n",
-                boundary
-            )
-            .unwrap();
-            write!(
-                body_header,
-                "Content-Length: {}\r\n",
-                body_payload.position()
-            )
-            .unwrap();
-            write!(body_header, "\r\n").unwrap();
-
-            write!(body_payload, "\r\n--{}--", boundary).unwrap();
-
-            let mut body = body_header.into_inner();
-            let payload_vec = body_payload.into_inner();
-            body.extend(payload_vec);
+            let body = multipart_encode(vec![obj], boundary);
 
             res.set_body(body);
             Ok(res)

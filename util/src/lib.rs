@@ -2,7 +2,7 @@ use bytes::{Buf, Bytes};
 use dicom::object::{DefaultDicomObject, InMemDicomObject, StandardDataDictionary};
 use log::{debug, error, trace};
 use serde_json::Value;
-use std::io::BufRead;
+use std::io::{BufRead, Write};
 use std::io::{Cursor, Read};
 use thiserror::Error;
 
@@ -23,6 +23,36 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 pub mod decode;
 pub mod encode;
+
+pub fn multipart_encode(mut dicoms: Vec<DefaultDicomObject>, boundary: &str) -> Vec<u8> {
+    assert!(dicoms.len() == 1);
+    let obj = dicoms.remove(0);
+    let mut body_payload = Cursor::new(Vec::with_capacity(1024 * 1024));
+    obj.write_all(&mut body_payload).unwrap();
+
+    let mut body_header = Cursor::new(Vec::with_capacity(4 * 80));
+    write!(body_header, "--{}\r\n", boundary).unwrap();
+    write!(
+        body_header,
+        "Content-Type: multipart/related; type=\"application/dicom\"; boundary={}\r\n",
+        boundary
+    )
+    .unwrap();
+    write!(
+        body_header,
+        "Content-Length: {}\r\n",
+        body_payload.position()
+    )
+    .unwrap();
+    write!(body_header, "\r\n").unwrap();
+
+    write!(body_payload, "\r\n--{}--", boundary).unwrap();
+
+    let mut body = body_header.into_inner();
+    let payload_vec = body_payload.into_inner();
+    body.extend(payload_vec);
+    body
+}
 
 #[derive(Debug)]
 enum MultipartParserStates {
