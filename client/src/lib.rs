@@ -121,8 +121,20 @@ pub trait DICOMwebClient {
 }
 
 /// Every backend needs to implement this trait for a type that keeps track of
-/// the configuration of a single query. This then serves as the associated type
+/// the building of a single query. This then serves as the associated type
 /// in the `DICOMwebClient` trait.
+///
+/// The following methods are not part of this trait since their signature
+/// depends on whether the backend library is async or blocking.
+/// They have to be implemented in the types own impl block.
+///
+/// pub async fn results(self) -> Result<Vec<InMemDicomObject>>
+/// pub async fn dicoms(self) -> Result<Vec<DefaultDicomObject>>
+///
+/// or
+///
+/// pub fn results(self) -> Result<Vec<InMemDicomObject>>
+/// pub fn dicoms(self) -> Result<Vec<DefaultDicomObject>>
 pub trait DICOMQueryBuilder {
     fn query(self, key: &str, value: &str) -> Self;
     fn header(self, key: &str, value: &str) -> Self;
