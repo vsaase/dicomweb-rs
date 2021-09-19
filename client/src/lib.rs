@@ -4,6 +4,7 @@ use thiserror::Error;
 pub mod async_surf;
 pub mod reqwest;
 
+/// The Error type of this crate with automatic translations from dependencies using the thiserror crate.
 #[derive(Error, Debug)]
 pub enum Error {
     #[error("{0}")]
@@ -25,8 +26,11 @@ pub enum Error {
     #[error("{0}")]
     DICOMweb(String),
 }
+
 pub type Result<T> = std::result::Result<T, Error>;
 
+/// The central trait of the DICOMweb client library, which is implemented by the HTTP backend libraries.
+/// The associated type `QueryBuilder` shall be set to a type that implements the DICOMQueryBuilder trait.
 pub trait DICOMwebClient {
     type QueryBuilder: DICOMQueryBuilder;
 
@@ -116,6 +120,9 @@ pub trait DICOMwebClient {
     fn get_wado_prefix(&self) -> &str;
 }
 
+/// Every backend needs to implement this trait for a type that keeps track of
+/// the configuration of a single query. This then serves as the associated type
+/// in the `DICOMwebClient` trait.
 pub trait DICOMQueryBuilder {
     fn query(self, key: &str, value: &str) -> Self;
     fn header(self, key: &str, value: &str) -> Self;
