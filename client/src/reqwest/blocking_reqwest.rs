@@ -8,7 +8,6 @@ use dicomweb_util::{dicom_from_reader, json2dicom, parse_multipart_body};
 use http::header::HeaderName;
 use http::{HeaderMap, HeaderValue};
 use reqwest::Proxy;
-use serde::de::DeserializeOwned;
 use serde::Serialize;
 use serde_json::Value;
 

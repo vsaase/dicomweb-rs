@@ -1,13 +1,6 @@
-use std::io::Cursor;
-
-use bytes::Buf;
 use dicomweb_client::Result;
 use dicomweb_client::{reqwest::blocking_reqwest::Client, DICOMQueryBuilder, DICOMwebClient};
-use dicomweb_util::{
-    dicom_from_reader, json2dicom, parse_multipart_body, DICOMJson, DICOMJsonTagValue,
-};
-use log::{debug, error, info, log_enabled, trace, warn, Level};
-use serde_json::Value;
+use log::info;
 
 fn main() -> Result<()> {
     env_logger::init();
@@ -16,7 +9,7 @@ fn main() -> Result<()> {
     // let url = "http://localhost:8042/dicom-web";
     // let url = "http://localhost:8080/dcm4chee-arc/aets/DCM4CHEE/rs";
     let url = "http://localhost:8081";
-    // let client = DICOMwebClient::new(url);
+
     info!("creating client");
     let mut client = Client::new(url);
     info!("querying studies");

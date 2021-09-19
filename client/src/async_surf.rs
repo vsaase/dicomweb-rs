@@ -1,13 +1,11 @@
-use crate::{DICOMQueryBuilder, Error, Result};
+use crate::{DICOMQueryBuilder, Result};
 use bytes::{Buf, Bytes};
 use dicom::object::{DefaultDicomObject, InMemDicomObject};
 use dicomweb_util::{dicom_from_reader, json2dicom, parse_multipart_body};
 use log::debug;
-use serde::de::DeserializeOwned;
-use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
-use std::{convert::TryInto, fmt::format, io::Cursor, marker::PhantomData};
+use std::io::Cursor;
 use surf::Url;
 
 use crate::DICOMwebClient;

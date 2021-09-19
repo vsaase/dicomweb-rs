@@ -4,11 +4,11 @@ use std::io::Cursor;
 use crate::{Error, Result};
 use bytes::Buf;
 use dicom::object::{DefaultDicomObject, InMemDicomObject};
-use dicomweb_util::{dicom_from_reader, json2dicom, parse_multipart_body};
+use dicomweb_util::json2dicom;
+use dicomweb_util::{dicom_from_reader, parse_multipart_body};
 use http::header::HeaderName;
 use http::{HeaderMap, HeaderValue};
 use reqwest::Proxy;
-use serde::de::DeserializeOwned;
 use serde::Serialize;
 use serde_json::Value;
 

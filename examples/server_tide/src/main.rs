@@ -1,14 +1,8 @@
-use std::ops::Deref;
-
 use async_std::path::Path;
 use async_trait::async_trait;
-use dicom::{
-    core::DataElement,
-    object::{mem::InMemElement, open_file, DefaultDicomObject, DicomObject, InMemDicomObject},
-};
+use dicom::object::{open_file, DefaultDicomObject, InMemDicomObject};
 use dicomweb_server::{DICOMServer, DICOMwebServer, INSTANCETAGS, SERIESTAGS, STUDYTAGS};
 use itertools::Itertools;
-use log::info;
 use walkdir::WalkDir;
 
 #[derive(Clone, Default)]
@@ -21,10 +15,6 @@ struct Server {
 }
 
 impl Server {
-    pub fn new() -> Server {
-        Server::with_dicoms(vec![])
-    }
-
     pub fn with_dicoms(dicoms: Vec<DefaultDicomObject>) -> Server {
         Server {
             dicoms,
@@ -146,8 +136,8 @@ impl DICOMServer for Server {
 
     async fn retrieve_instance(
         &self,
-        study_instance_uid: &str,
-        series_instance_uid: &str,
+        _study_instance_uid: &str,
+        _series_instance_uid: &str,
         sop_instance_uid: &str,
     ) -> Option<DefaultDicomObject> {
         self.dicoms

@@ -37,8 +37,8 @@ pub struct DICOMwebClientReqwest<C, B> {
     url: String,
     qido_url_prefix: String,
     wado_url_prefix: String,
-    stow_url_prefix: String,
-    ups_url_prefix: String,
+    _stow_url_prefix: String,
+    _ups_url_prefix: String,
 }
 
 impl<C: ReqwestClient, B: ReqwestClientBuilder<Client = C>> DICOMwebClient
@@ -139,8 +139,8 @@ impl<C: ReqwestClient, B: ReqwestClientBuilder<Client = C>> DICOMwebClientReqwes
             url: String::from(url),
             qido_url_prefix: String::default(),
             wado_url_prefix: String::default(),
-            stow_url_prefix: String::default(),
-            ups_url_prefix: String::default(),
+            _stow_url_prefix: String::default(),
+            _ups_url_prefix: String::default(),
         };
 
         #[cfg(not(target_arch = "wasm32"))]

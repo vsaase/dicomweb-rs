@@ -1,18 +1,11 @@
-use std::collections::{BTreeMap, HashMap};
-// use std::fmt::Write;
 use std::io::Write;
 
-use async_std::path::Path;
 use async_trait::async_trait;
-use dicom::core::header::Header;
 use dicom::core::Tag;
-use dicom::object::open_file;
 use dicom::object::{DefaultDicomObject, InMemDicomObject};
 use dicomweb_util::encode::{encode_dicom_to_json, DICOMJsonObject};
-use log::info;
-use serde_json::{json, Value};
-use std::io::{self, BufWriter, Cursor};
-use tide::log::debug;
+use serde_json::json;
+use std::io::{self, Cursor};
 use tide::Response;
 
 // http://dicom.nema.org/medical/dicom/current/output/chtml/part18/sect_10.6.html#table_10.6.1-5
@@ -100,7 +93,7 @@ where
         Ok(res)
     }
 
-    async fn search_series(mut req: tide::Request<T>) -> tide::Result {
+    async fn search_series(req: tide::Request<T>) -> tide::Result {
         let server = req.state();
         let study_instance_uid = req.param("study_instance_uid")?;
         let dicoms = server.search_series(study_instance_uid).await;
@@ -112,7 +105,7 @@ where
         Ok(res)
     }
 
-    async fn search_instances(mut req: tide::Request<T>) -> tide::Result {
+    async fn search_instances(req: tide::Request<T>) -> tide::Result {
         let server = req.state();
         let study_instance_uid = req.param("study_instance_uid")?;
         let series_instance_uid = req.param("series_instance_uid")?;
@@ -127,7 +120,7 @@ where
         Ok(res)
     }
 
-    async fn retrieve_instance(mut req: tide::Request<T>) -> tide::Result {
+    async fn retrieve_instance(req: tide::Request<T>) -> tide::Result {
         let server = req.state();
         let study_instance_uid = req.param("study_instance_uid")?;
         let series_instance_uid = req.param("series_instance_uid")?;
@@ -175,7 +168,7 @@ where
             res.set_body(body);
             Ok(res)
         } else {
-            let mut res = Response::new(404);
+            let res = Response::new(404);
             Ok(res)
         }
     }

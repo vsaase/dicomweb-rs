@@ -1,8 +1,6 @@
-use dicom::object::InMemDicomObject;
 use log::info;
 use thiserror::Error;
 
-pub use dicomweb_util::DICOMJson;
 pub mod async_surf;
 pub mod reqwest;
 
@@ -69,7 +67,10 @@ pub trait DICOMwebClient {
     }
 
     fn retrieve_study(&mut self, study_instance_uid: &str) -> Self::QueryBuilder {
-        todo!()
+        let url = format!("{}/studies/{}", self.get_wado_prefix(), study_instance_uid,);
+        info!("get url {}", &url);
+        self.get_url(&url)
+            .header("Accept", "multipart/related; type=\"application/dicom\"")
     }
 
     fn retrieve_series(
@@ -77,7 +78,15 @@ pub trait DICOMwebClient {
         study_instance_uid: &str,
         series_instance_uid: &str,
     ) -> Self::QueryBuilder {
-        todo!()
+        let url = format!(
+            "{}/studies/{}/series/{}",
+            self.get_wado_prefix(),
+            study_instance_uid,
+            series_instance_uid,
+        );
+        info!("get url {}", &url);
+        self.get_url(&url)
+            .header("Accept", "multipart/related; type=\"application/dicom\"")
     }
 
     fn retrieve_instance(

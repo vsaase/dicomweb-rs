@@ -38,7 +38,7 @@ pub fn encode_dicom_to_json(dicom: InMemDicomObject) -> DICOMJsonObject {
                         json!([elt.value().to_int::<i64>().unwrap()])
                     }
                     SQ => match elt.value() {
-                        dicom::core::DicomValue::Sequence { items, size } => {
+                        dicom::core::DicomValue::Sequence { items, size: _ } => {
                             let v: Vec<DICOMJsonObject> = items
                                 .into_iter()
                                 .map(|i| encode_dicom_to_json(i.clone()))

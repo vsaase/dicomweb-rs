@@ -1,12 +1,8 @@
-use std::io::Cursor;
-
-use bytes::Buf;
 use dicomweb_client::async_surf::Client;
 
 // use dicomweb_client::reqwest::async_reqwest::Client;
-use dicomweb_client::{DICOMJson, DICOMQueryBuilder, DICOMwebClient, Result};
-use log::{debug, error, info, log_enabled, trace, warn, Level};
-use serde_json::Value;
+use dicomweb_client::{DICOMQueryBuilder, DICOMwebClient, Result};
+use log::info;
 
 #[async_std::main]
 async fn main() -> Result<()> {
@@ -16,9 +12,9 @@ async fn main() -> Result<()> {
     // let url = "http://localhost:8042/dicom-web";
     // let url = "http://localhost:8080/dcm4chee-arc/aets/DCM4CHEE/rs";
     let url = "http://localhost:8081";
-    // let client = DICOMwebClient::new(url);
+
     info!("creating client");
-    // let mut client = DICOMwebClientAsync::new(url);
+
     let mut client = Client::new(url);
     info!("querying studies");
 

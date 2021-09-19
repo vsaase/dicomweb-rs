@@ -1,18 +1,9 @@
 use bytes::{Buf, Bytes};
-use dicom::object::mem::InMemElement;
-use dicom::object::{
-    DefaultDicomObject, FileMetaTable, FileMetaTableBuilder, InMemDicomObject,
-    StandardDataDictionary,
-};
-use enum_as_inner::EnumAsInner;
-use log::{debug, error, info, log_enabled, trace, warn, Level};
-use serde::Deserialize;
+use dicom::object::{DefaultDicomObject, InMemDicomObject, StandardDataDictionary};
+use log::{debug, error, trace};
 use serde_json::Value;
-use std::{borrow::Borrow, io::BufRead};
-use std::{
-    collections::HashMap,
-    io::{self, Cursor, Read},
-};
+use std::io::BufRead;
+use std::io::{Cursor, Read};
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -98,6 +89,7 @@ pub fn parse_multipart_body(body: Bytes, boundary: &str) -> Result<Vec<Vec<u8>>>
                     // length not specified, assuming single part and trailing boundary like CRLF--boundary--
                     let mut buffer = Vec::new();
                     reader.read_to_end(&mut buffer)?;
+                    assert!(buffer.ends_with("--".as_bytes()));
                     let len = buffer.len() - boundary.len() - 6;
                     result.push(buffer[..len].into());
                 }
@@ -120,22 +112,6 @@ pub fn dicom_from_reader<R: Read>(mut file: R) -> Result<DefaultDicomObject> {
     Ok(result)
 }
 
-#[derive(Debug, Deserialize, EnumAsInner)]
-#[serde(untagged)]
-pub enum DICOMJsonTagValue {
-    Str(String),
-    Int(i32),
-    DICOMJson(DICOMJson),
-    Value(Value),
-}
-
-#[derive(Debug, Deserialize)]
-pub struct DICOMJsonTag {
-    pub vr: String,
-    pub Value: Vec<DICOMJsonTagValue>,
-}
-
-pub type DICOMJson = Vec<HashMap<String, DICOMJsonTag>>;
 pub type DicomResponse = InMemDicomObject<StandardDataDictionary>;
 
 pub fn json2dicom(parsed: &Vec<Value>) -> Result<Vec<DicomResponse>> {
@@ -145,7 +121,6 @@ pub fn json2dicom(parsed: &Vec<Value>) -> Result<Vec<DicomResponse>> {
     let ds = parsed.iter().map(decode::decode_response_item).collect();
     Ok(ds)
 }
-
 #[cfg(test)]
 mod tests {
     #[test]
