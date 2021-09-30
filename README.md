@@ -15,12 +15,15 @@ use dicomweb_client::{DICOMQueryBuilder, DICOMwebClient, Result};
 async fn main() -> Result<()> {
     let url = "http://localhost:8080/dcm4chee-arc/aets/DCM4CHEE/rs";
     let mut client = Client::new(url);
+
+    // results is a Vec of DICOM objects
     let results = client
         .search_studies()
         .patient_name("*")
         .limit(10)
         .results()
         .await?;
+        
     let study_instance_uid = results[0].element_by_name("StudyInstanceUID")?.to_str()?;
 }
 ```
