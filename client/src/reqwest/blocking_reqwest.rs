@@ -7,7 +7,10 @@ use dicom::object::{DefaultDicomObject, InMemDicomObject};
 use dicomweb_util::{dicom_from_reader, json2dicom, parse_multipart_body};
 use http::header::HeaderName;
 use http::{HeaderMap, HeaderValue};
+
+#[cfg(not(target_arch = "wasm32"))]
 use reqwest::Proxy;
+
 use serde::Serialize;
 use serde_json::Value;
 
@@ -26,6 +29,7 @@ impl ReqwestClientBuilder for reqwest::blocking::ClientBuilder {
         Self::new()
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     fn proxy(self, proxy: Proxy) -> Self {
         self.proxy(proxy)
     }

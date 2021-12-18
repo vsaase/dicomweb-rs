@@ -9,7 +9,7 @@ version = "0.1.0"
 async-std = {version = "1.10.0", features = ["attributes"]}
 bytes = "1"
 dicom = "0.4.0"
-dicomweb-client = {path = "../../client"}
+dicomweb-client = {path = "../../client", features = ["surf"]}
 env_logger = "0.9.0"
 futures = "0.3.14"
 log = "0.4"

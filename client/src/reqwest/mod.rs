@@ -12,12 +12,15 @@ use std::env;
 use crate::{DICOMQueryBuilder, DICOMwebClient};
 
 pub mod async_reqwest;
+
+#[cfg(feature = "blocking")]
 pub mod blocking_reqwest;
 
 pub trait ReqwestClientBuilder {
     type Client: ReqwestClient + Default;
 
     fn new() -> Self;
+    #[cfg(not(target_arch = "wasm32"))]
     fn proxy(self, proxy: Proxy) -> Self;
     fn default_headers(self, headers: HeaderMap) -> Self;
     fn build(self) -> reqwest::Result<Self::Client>;

@@ -1,6 +1,7 @@
 use log::info;
 use thiserror::Error;
 
+#[cfg(feature = "surf")]
 pub mod async_surf;
 pub mod reqwest;
 
@@ -11,6 +12,7 @@ pub enum Error {
     Io(#[from] std::io::Error),
     #[error("{0}")]
     Reqwest(#[from] reqwest::Error),
+    #[cfg(feature = "surf")]
     #[error("{0}")]
     Surf(surf::Error),
     #[error("{0}")]
