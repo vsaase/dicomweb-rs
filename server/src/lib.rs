@@ -5,8 +5,10 @@ use dicom::core::Tag;
 use dicom::object::{DefaultDicomObject, InMemDicomObject};
 use dicomweb_util::encode::{encode_dicom_to_json, DICOMJsonObject};
 use dicomweb_util::multipart_encode;
+use http_types::headers::HeaderValue;
 use serde_json::json;
 use std::io::{self, Cursor};
+use tide::security::{CorsMiddleware, Origin};
 use tide::Response;
 
 // http://dicom.nema.org/medical/dicom/current/output/chtml/part18/sect_10.6.html#table_10.6.1-5
@@ -49,6 +51,12 @@ where
 {
     pub fn with_dicom_server(server: T) -> Self {
         let mut app = tide::with_state(server);
+        let cors = CorsMiddleware::new()
+            .allow_methods("GET, POST, OPTIONS".parse::<HeaderValue>().unwrap())
+            .allow_origin(Origin::from("*"))
+            .allow_credentials(false);
+
+        app.with(cors);
 
         app.with(tide::log::LogMiddleware::new());
         let qido = app.state().get_qido_prefix().to_string()

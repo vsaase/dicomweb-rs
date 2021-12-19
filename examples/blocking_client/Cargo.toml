@@ -9,7 +9,7 @@ version = "0.1.0"
 [dependencies]
 bytes = "1"
 dicom = "0.4.0"
-dicomweb-client = {path = "../../client"}
+dicomweb-client = {path = "../../client", features = ["blocking"]}
 dicomweb-util = {path = "../../util"}
 env_logger = "0.9.0"
 futures = "0.3.14"
