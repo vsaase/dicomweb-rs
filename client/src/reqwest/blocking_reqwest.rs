@@ -50,6 +50,9 @@ impl ReqwestClient for reqwest::blocking::Client {
     fn get<U: reqwest::IntoUrl>(&self, url: U) -> Self::RequestBuilder {
         self.get(url)
     }
+    fn post<U: reqwest::IntoUrl>(&self, url: U) -> Self::RequestBuilder {
+        self.post(url)
+    }
 }
 
 impl RequestBuilderTrait for reqwest::blocking::RequestBuilder {
@@ -65,6 +68,10 @@ impl RequestBuilderTrait for reqwest::blocking::RequestBuilder {
 
     fn query<T: Serialize + ?Sized>(self, query: &T) -> Self {
         self.query(query)
+    }
+
+    fn body(self, body: Vec<u8>) -> Self {
+        self.body(body)
     }
 }
 

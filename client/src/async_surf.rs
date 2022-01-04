@@ -49,11 +49,28 @@ impl DICOMwebClient for Client {
         }
     }
 
+    fn post_url(&mut self, url: &str) -> Self::QueryBuilder {
+        let mut newurl = self.url.clone().unwrap();
+        let mut basepath = newurl.path();
+        if basepath == "/" {
+            basepath = "";
+        }
+        let path = format!("{}{}", basepath, url);
+        newurl.set_path(&path.as_str());
+        QueryBuilder {
+            request_builder: self.client.post(newurl),
+            query: Default::default(),
+        }
+    }
+
     fn get_qido_prefix(&self) -> &str {
         &self.qido_url_prefix
     }
     fn get_wado_prefix(&self) -> &str {
         &self.wado_url_prefix
+    }
+    fn get_stow_prefix(&self) -> &str {
+        &self.stow_url_prefix
     }
 }
 
@@ -90,6 +107,10 @@ impl DICOMQueryBuilder for QueryBuilder {
     fn header(mut self, key: &str, value: &str) -> Self {
         self.request_builder = self.request_builder.header(key, value);
         self
+    }
+
+    fn body(self, body: Vec<u8>) -> Self {
+        todo!()
     }
 }
 

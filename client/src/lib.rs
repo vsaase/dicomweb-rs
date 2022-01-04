@@ -1,8 +1,11 @@
+use dicom::object::DefaultDicomObject;
+use dicomweb_util::multipart_encode_binary;
 use log::info;
 use thiserror::Error;
 
 #[cfg(feature = "surf")]
 pub mod async_surf;
+
 pub mod reqwest;
 
 /// The Error type of this crate with automatic translations from dependencies using the thiserror crate.
@@ -114,12 +117,17 @@ pub trait DICOMwebClient {
     }
 
     fn store_instances(&mut self) -> Self::QueryBuilder {
-        todo!();
+        let url = format!("{}/studies", self.get_stow_prefix());
+        info!("post url {}", &url);
+        self.post_url(&url)
+            .header("Accept", "multipart/related; type=\"application/dicom\"")
     }
 
     fn get_url(&mut self, url: &str) -> Self::QueryBuilder;
+    fn post_url(&mut self, url: &str) -> Self::QueryBuilder;
     fn get_qido_prefix(&self) -> &str;
     fn get_wado_prefix(&self) -> &str;
+    fn get_stow_prefix(&self) -> &str;
 }
 
 /// Every backend needs to implement this trait for a type that keeps track of
@@ -140,6 +148,7 @@ pub trait DICOMwebClient {
 pub trait DICOMQueryBuilder {
     fn query(self, key: &str, value: &str) -> Self;
     fn header(self, key: &str, value: &str) -> Self;
+    fn body(self, body: Vec<u8>) -> Self;
 
     fn patient_name(self, name_query: &str) -> Self
     where
@@ -160,6 +169,15 @@ pub trait DICOMQueryBuilder {
         Self: Sized,
     {
         self.query("offset", offset.to_string().as_str())
+    }
+
+    fn add_instance_buffer(self, buffer: Vec<u8>) -> Self
+    where
+        Self: Sized,
+    {
+        let boundary = "ab69a3d5-542c-49e1-884b-8e135e104893";
+        let body = multipart_encode_binary(buffer, boundary);
+        self.body(body)
     }
 }
 

@@ -31,6 +31,7 @@ pub trait ReqwestClient {
     type RequestBuilder: RequestBuilderTrait;
 
     fn get<U: reqwest::IntoUrl>(&self, url: U) -> Self::RequestBuilder;
+    fn post<U: reqwest::IntoUrl>(&self, url: U) -> Self::RequestBuilder;
 }
 
 #[derive(Default)]
@@ -40,7 +41,7 @@ pub struct DICOMwebClientReqwest<C, B> {
     url: String,
     qido_url_prefix: String,
     wado_url_prefix: String,
-    _stow_url_prefix: String,
+    stow_url_prefix: String,
     _ups_url_prefix: String,
 }
 
@@ -67,56 +68,24 @@ impl<C: ReqwestClient, B: ReqwestClientBuilder<Client = C>> DICOMwebClient
         }
     }
 
+    fn post_url(&mut self, url: &str) -> Self::QueryBuilder {
+        self.make_client();
+        let url = format!("{}{}", self.url, url);
+        QueryBuilderReqwest {
+            request_builder: self.client.as_ref().unwrap().post(url),
+        }
+    }
+
     fn get_qido_prefix(&self) -> &str {
         &self.qido_url_prefix
     }
     fn get_wado_prefix(&self) -> &str {
         &self.wado_url_prefix
     }
-
-    fn search_studies(&mut self) -> Self::QueryBuilder {
-        let url = format!("{}/studies", self.get_qido_prefix());
-        self.get_url(&url)
+    fn get_stow_prefix(&self) -> &str {
+        &self.stow_url_prefix
     }
 
-    fn search_series(&mut self, study_instance_uid: &str) -> Self::QueryBuilder {
-        let url = format!(
-            "{}/studies/{}/series",
-            self.get_qido_prefix(),
-            study_instance_uid
-        );
-        self.get_url(&url)
-    }
-
-    fn search_instances(
-        &mut self,
-        study_instance_uid: &str,
-        series_instance_uid: &str,
-    ) -> Self::QueryBuilder {
-        let url = format!(
-            "{}/studies/{}/series/{}/instances",
-            self.get_qido_prefix(),
-            study_instance_uid,
-            series_instance_uid,
-        );
-        self.get_url(&url)
-    }
-
-    fn retrieve_instance(
-        &mut self,
-        study_instance_uid: &str,
-        series_instance_uid: &str,
-        sop_instance_uid: &str,
-    ) -> Self::QueryBuilder {
-        let url = format!(
-            "{}/studies/{}/series/{}/instances/{}",
-            self.get_wado_prefix(),
-            study_instance_uid,
-            series_instance_uid,
-            sop_instance_uid,
-        );
-        self.get_url(&url)
-    }
 }
 
 impl<C: ReqwestClient, B: ReqwestClientBuilder<Client = C>> DICOMwebClientReqwest<C, B> {
@@ -142,7 +111,7 @@ impl<C: ReqwestClient, B: ReqwestClientBuilder<Client = C>> DICOMwebClientReqwes
             url: String::from(url),
             qido_url_prefix: String::default(),
             wado_url_prefix: String::default(),
-            _stow_url_prefix: String::default(),
+            stow_url_prefix: String::default(),
             _ups_url_prefix: String::default(),
         };
 
@@ -167,6 +136,7 @@ pub trait RequestBuilderTrait {
         <HeaderName as TryFrom<K>>::Error: Into<http::Error>,
         <HeaderValue as TryFrom<V>>::Error: Into<http::Error>;
     fn query<T: Serialize + ?Sized>(self, query: &T) -> Self;
+    fn body(self, body: Vec<u8>) -> Self;
 }
 
 impl<T: RequestBuilderTrait> DICOMQueryBuilder for QueryBuilderReqwest<T> {
@@ -177,6 +147,11 @@ impl<T: RequestBuilderTrait> DICOMQueryBuilder for QueryBuilderReqwest<T> {
 
     fn header(mut self, key: &str, value: &str) -> Self {
         self.request_builder = self.request_builder.header(key, value);
+        self
+    }
+
+    fn body(mut self, body: Vec<u8>) -> Self {
+        self.request_builder = self.request_builder.body(body);
         self
     }
 }

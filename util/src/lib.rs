@@ -24,12 +24,8 @@ pub type Result<T> = std::result::Result<T, Error>;
 pub mod decode;
 pub mod encode;
 
-pub fn multipart_encode(mut dicoms: Vec<DefaultDicomObject>, boundary: &str) -> Vec<u8> {
-    assert!(dicoms.len() == 1);
-    let obj = dicoms.remove(0);
-    let mut body_payload = Cursor::new(Vec::with_capacity(1024 * 1024));
-    obj.write_all(&mut body_payload).unwrap();
-
+pub fn multipart_encode_binary(buffer: Vec<u8>, boundary: &str) -> Vec<u8> {
+    let nbytes = buffer.len();
     let mut body_header = Cursor::new(Vec::with_capacity(4 * 80));
     write!(body_header, "--{}\r\n", boundary).unwrap();
     write!(
@@ -38,13 +34,11 @@ pub fn multipart_encode(mut dicoms: Vec<DefaultDicomObject>, boundary: &str) -> 
         boundary
     )
     .unwrap();
-    write!(
-        body_header,
-        "Content-Length: {}\r\n",
-        body_payload.position()
-    )
-    .unwrap();
+    write!(body_header, "Content-Length: {}\r\n", nbytes).unwrap();
     write!(body_header, "\r\n").unwrap();
+
+    let mut body_payload = Cursor::new(buffer);
+    body_payload.set_position(nbytes as u64);
 
     write!(body_payload, "\r\n--{}--", boundary).unwrap();
 
@@ -52,6 +46,15 @@ pub fn multipart_encode(mut dicoms: Vec<DefaultDicomObject>, boundary: &str) -> 
     let payload_vec = body_payload.into_inner();
     body.extend(payload_vec);
     body
+}
+
+pub fn multipart_encode(mut dicoms: Vec<DefaultDicomObject>, boundary: &str) -> Vec<u8> {
+    assert!(dicoms.len() == 1);
+    let obj = dicoms.remove(0);
+    let mut body_payload = Cursor::new(Vec::with_capacity(1024 * 1024));
+    obj.write_all(&mut body_payload).unwrap();
+
+    multipart_encode_binary(body_payload.into_inner(), boundary)
 }
 
 #[derive(Debug)]

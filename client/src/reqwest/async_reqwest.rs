@@ -49,7 +49,11 @@ impl ReqwestClient for reqwest::Client {
     fn get<U: reqwest::IntoUrl>(&self, url: U) -> Self::RequestBuilder {
         self.get(url)
     }
+    fn post<U: reqwest::IntoUrl>(&self, url: U) -> Self::RequestBuilder {
+        self.post(url)
+    }
 }
+
 impl RequestBuilderTrait for reqwest::RequestBuilder {
     fn header<K, V>(self, key: K, value: V) -> Self
     where
@@ -63,6 +67,10 @@ impl RequestBuilderTrait for reqwest::RequestBuilder {
 
     fn query<T: Serialize + ?Sized>(self, query: &T) -> Self {
         self.query(query)
+    }
+
+    fn body(self, body: Vec<u8>) -> Self {
+        todo!()
     }
 }
 

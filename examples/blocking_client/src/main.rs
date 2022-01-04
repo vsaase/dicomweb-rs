@@ -7,8 +7,8 @@ fn main() -> Result<()> {
 
     // let url = "http://localhost:8088/rs";
     // let url = "http://localhost:8042/dicom-web";
-    // let url = "http://localhost:8080/dcm4chee-arc/aets/DCM4CHEE/rs";
-    let url = "http://localhost:8081";
+    let url = "http://localhost:8080/dcm4chee-arc/aets/DCM4CHEE/rs";
+    // let url = "http://localhost:8081";
 
     info!("creating client");
     let mut client = Client::new(url);
