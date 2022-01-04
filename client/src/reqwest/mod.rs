@@ -43,6 +43,7 @@ pub struct DICOMwebClientReqwest<C, B> {
     wado_url_prefix: String,
     stow_url_prefix: String,
     _ups_url_prefix: String,
+    boundary: String,
 }
 
 impl<C: ReqwestClient, B: ReqwestClientBuilder<Client = C>> DICOMwebClient
@@ -65,6 +66,7 @@ impl<C: ReqwestClient, B: ReqwestClientBuilder<Client = C>> DICOMwebClient
         let url = format!("{}{}", self.url, url);
         QueryBuilderReqwest {
             request_builder: self.client.as_ref().unwrap().get(url),
+            boundary: self.get_boundary(),
         }
     }
 
@@ -73,6 +75,7 @@ impl<C: ReqwestClient, B: ReqwestClientBuilder<Client = C>> DICOMwebClient
         let url = format!("{}{}", self.url, url);
         QueryBuilderReqwest {
             request_builder: self.client.as_ref().unwrap().post(url),
+            boundary: self.get_boundary(),
         }
     }
 
@@ -86,6 +89,13 @@ impl<C: ReqwestClient, B: ReqwestClientBuilder<Client = C>> DICOMwebClient
         &self.stow_url_prefix
     }
 
+    fn set_boundary(&mut self, boundary: &str) {
+        self.boundary = boundary.to_string();
+    }
+
+    fn get_boundary(&self) -> String {
+        self.boundary.clone()
+    }
 }
 
 impl<C: ReqwestClient, B: ReqwestClientBuilder<Client = C>> DICOMwebClientReqwest<C, B> {
@@ -113,6 +123,7 @@ impl<C: ReqwestClient, B: ReqwestClientBuilder<Client = C>> DICOMwebClientReqwes
             wado_url_prefix: String::default(),
             stow_url_prefix: String::default(),
             _ups_url_prefix: String::default(),
+            boundary: String::default(),
         };
 
         #[cfg(not(target_arch = "wasm32"))]
@@ -126,6 +137,7 @@ impl<C: ReqwestClient, B: ReqwestClientBuilder<Client = C>> DICOMwebClientReqwes
 
 pub struct QueryBuilderReqwest<T> {
     request_builder: T,
+    boundary: String,
 }
 
 pub trait RequestBuilderTrait {
@@ -153,6 +165,10 @@ impl<T: RequestBuilderTrait> DICOMQueryBuilder for QueryBuilderReqwest<T> {
     fn body(mut self, body: Vec<u8>) -> Self {
         self.request_builder = self.request_builder.body(body);
         self
+    }
+
+    fn get_boundary(&self) -> String {
+        self.boundary.clone()
     }
 }
 
