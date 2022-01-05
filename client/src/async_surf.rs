@@ -72,6 +72,14 @@ impl DICOMwebClient for Client {
     fn get_stow_prefix(&self) -> &str {
         &self.stow_url_prefix
     }
+
+    fn set_boundary(&mut self, boundary: &str) {
+        todo!()
+    }
+
+    fn get_boundary(&self) -> String {
+        todo!()
+    }
 }
 
 impl Client {
@@ -110,6 +118,10 @@ impl DICOMQueryBuilder for QueryBuilder {
     }
 
     fn body(self, body: Vec<u8>) -> Self {
+        todo!()
+    }
+
+    fn get_boundary(&self) -> String {
         todo!()
     }
 }

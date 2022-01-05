@@ -119,12 +119,19 @@ pub trait DICOMwebClient {
     fn store_instances(&mut self) -> Self::QueryBuilder {
         let url = format!("{}/studies", self.get_stow_prefix());
         info!("post url {}", &url);
-        self.post_url(&url)
-            .header("Accept", "multipart/related; type=\"application/dicom\"")
+        let boundary = "ab69a3d5-542c-49e1-884b-8e135e104893";
+        self.set_boundary(&boundary);
+        let content_type = format!(
+            "multipart/related; type=\"application/dicom\"; boundary={}",
+            boundary
+        );
+        self.post_url(&url).header("content-type", &content_type)
     }
 
     fn get_url(&mut self, url: &str) -> Self::QueryBuilder;
     fn post_url(&mut self, url: &str) -> Self::QueryBuilder;
+    fn set_boundary(&mut self, boundary: &str);
+    fn get_boundary(&self) -> String;
     fn get_qido_prefix(&self) -> &str;
     fn get_wado_prefix(&self) -> &str;
     fn get_stow_prefix(&self) -> &str;
@@ -149,6 +156,7 @@ pub trait DICOMQueryBuilder {
     fn query(self, key: &str, value: &str) -> Self;
     fn header(self, key: &str, value: &str) -> Self;
     fn body(self, body: Vec<u8>) -> Self;
+    fn get_boundary(&self) -> String;
 
     fn patient_name(self, name_query: &str) -> Self
     where
@@ -175,8 +183,7 @@ pub trait DICOMQueryBuilder {
     where
         Self: Sized,
     {
-        let boundary = "ab69a3d5-542c-49e1-884b-8e135e104893";
-        let body = multipart_encode_binary(buffer, boundary);
+        let body = multipart_encode_binary(buffer, &self.get_boundary());
         self.body(body)
     }
 }
