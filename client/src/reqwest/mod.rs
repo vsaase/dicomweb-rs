@@ -100,7 +100,7 @@ impl<C: ReqwestClient, B: ReqwestClientBuilder<Client = C>> DICOMwebClient
 
 impl<C: ReqwestClient, B: ReqwestClientBuilder<Client = C>> DICOMwebClientReqwest<C, B> {
     #[cfg(not(target_arch = "wasm32"))]
-    fn proxy(mut self, proxy: reqwest::Proxy) -> Self {
+    pub fn proxy(mut self, proxy: reqwest::Proxy) -> Self {
         if let Some(client_builder) = self.config.take() {
             self.config = Some(client_builder.proxy(proxy));
         }
