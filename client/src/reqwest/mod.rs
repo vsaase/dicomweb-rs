@@ -4,7 +4,7 @@ use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 
 pub use reqwest::Error;
 #[cfg(not(target_arch = "wasm32"))]
-use reqwest::Proxy;
+pub use reqwest::Proxy;
 use serde::Serialize;
 use std::convert::TryFrom;
 use std::env;
